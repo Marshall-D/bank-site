@@ -79,7 +79,6 @@ export function AdminSidebar() {
             <Button
               variant="outline"
               className="w-full justify-start gap-3"
-              asLink
               onClick={() => setIsOpen(false)}
             >
               <LogOut className="h-5 w-5" />

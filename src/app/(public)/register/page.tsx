@@ -53,7 +53,7 @@ export default function RegisterPage() {
   const isFormValid = formData.fullName && formData.email && formData.password && formData.agreeToTerms
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12 bg-gradient-to-br from-background to-muted">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-primary-light/10 via-background to-muted px-4 py-12">
       <Logo size="lg" className="mb-8 max-w-[min(100%,54rem)]" />
       <Card className="w-full max-w-md border-border">
         <CardHeader className="space-y-2">

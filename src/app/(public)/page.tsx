@@ -58,7 +58,7 @@ export default function HomePage() {
   return (
     <>
       {/* Hero Section */}
-      <section className="relative overflow-hidden py-20 sm:py-32">
+      <section className="relative overflow-hidden bg-gradient-to-b from-primary-light/15 via-background to-background py-20 sm:py-32">
         <div className="container px-4 max-w-6xl mx-auto">
           <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-8 items-center">
             {/* Left Content */}
@@ -93,7 +93,7 @@ export default function HomePage() {
 
             {/* Right Visual */}
             <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 to-transparent rounded-3xl blur-3xl" />
+              <div className="absolute inset-0 rounded-3xl bg-gradient-to-tr from-primary-light/30 to-secondary/10 blur-3xl" />
               <div className="relative bg-gradient-to-br from-card to-muted rounded-3xl p-8 border border-border shadow-lg">
                 <div className="space-y-4">
                   <div className="h-12 w-32 bg-muted rounded-lg" />
@@ -132,7 +132,7 @@ export default function HomePage() {
                 <Card key={feature.title} className="border-border">
                   <CardHeader>
                     <div className="flex items-center gap-4 mb-2">
-                      <div className="p-2 bg-primary/10 rounded-lg">
+                      <div className="rounded-lg bg-primary-light/15 p-2">
                         <Icon className="h-6 w-6 text-primary" />
                       </div>
                     </div>

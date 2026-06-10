@@ -3,75 +3,111 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * Brand palette (British Royal Caribbean Bank)
+ * --brand-navy   #043B78  "British Royal" — primary
+ * --brand-cyan   #0FBBD1  shield / accent — primary-light
+ * --brand-gold   #EBB516  "Caribbean" — secondary
+ *
+ * Theme tokens below drive all bg-primary, text-secondary, etc. across the app.
+ */
+
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
+  --brand-navy: #043b78;
+  --brand-cyan: #0fbbd1;
+  --brand-gold: #ebb516;
+
+  --background: #ffffff;
+  --foreground: var(--brand-navy);
+
+  --card: #ffffff;
+  --card-foreground: var(--brand-navy);
+
+  --popover: #ffffff;
+  --popover-foreground: var(--brand-navy);
+
+  --primary: var(--brand-navy);
+  --primary-foreground: #ffffff;
+  --primary-light: var(--brand-cyan);
+
+  --secondary: var(--brand-gold);
+  --secondary-foreground: var(--brand-navy);
+
+  --muted: color-mix(in oklab, var(--brand-cyan) 10%, white);
+  --muted-foreground: color-mix(in oklab, var(--brand-navy) 62%, white);
+
+  --accent: color-mix(in oklab, var(--brand-cyan) 14%, white);
+  --accent-foreground: var(--brand-navy);
+
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+
+  --border: color-mix(in oklab, var(--brand-navy) 14%, white);
+  --input: color-mix(in oklab, var(--brand-navy) 10%, white);
+  --ring: var(--brand-cyan);
+
+  --chart-1: var(--brand-navy);
+  --chart-2: var(--brand-cyan);
+  --chart-3: var(--brand-gold);
+  --chart-4: color-mix(in oklab, var(--brand-cyan) 70%, var(--brand-navy));
+  --chart-5: color-mix(in oklab, var(--brand-gold) 75%, white);
+
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+
+  --sidebar: color-mix(in oklab, var(--brand-cyan) 6%, white);
+  --sidebar-foreground: var(--brand-navy);
+  --sidebar-primary: var(--brand-navy);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: color-mix(in oklab, var(--brand-cyan) 18%, white);
+  --sidebar-accent-foreground: var(--brand-navy);
+  --sidebar-border: color-mix(in oklab, var(--brand-navy) 12%, white);
+  --sidebar-ring: var(--brand-cyan);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.145 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.145 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.985 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: oklch(0.269 0 0);
-  --input: oklch(0.269 0 0);
-  --ring: oklch(0.439 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.269 0 0);
-  --sidebar-ring: oklch(0.439 0 0);
+  --background: #021a35;
+  --foreground: #f0f9fc;
+
+  --card: #032a52;
+  --card-foreground: #f0f9fc;
+
+  --popover: #032a52;
+  --popover-foreground: #f0f9fc;
+
+  --primary: var(--brand-cyan);
+  --primary-foreground: var(--brand-navy);
+  --primary-light: color-mix(in oklab, var(--brand-cyan) 80%, white);
+
+  --secondary: var(--brand-gold);
+  --secondary-foreground: var(--brand-navy);
+
+  --muted: #0a3560;
+  --muted-foreground: color-mix(in oklab, var(--brand-cyan) 55%, white);
+
+  --accent: #0a3560;
+  --accent-foreground: #f0f9fc;
+
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+
+  --border: color-mix(in oklab, var(--brand-cyan) 22%, #021a35);
+  --input: color-mix(in oklab, var(--brand-cyan) 15%, #021a35);
+  --ring: var(--brand-cyan);
+
+  --chart-1: var(--brand-cyan);
+  --chart-2: var(--brand-gold);
+  --chart-3: var(--brand-navy);
+  --chart-4: color-mix(in oklab, var(--brand-cyan) 60%, white);
+  --chart-5: color-mix(in oklab, var(--brand-gold) 70%, white);
+
+  --sidebar: #021a35;
+  --sidebar-foreground: #f0f9fc;
+  --sidebar-primary: var(--brand-cyan);
+  --sidebar-primary-foreground: var(--brand-navy);
+  --sidebar-accent: #0a3560;
+  --sidebar-accent-foreground: #f0f9fc;
+  --sidebar-border: color-mix(in oklab, var(--brand-cyan) 22%, #021a35);
+  --sidebar-ring: var(--brand-cyan);
 }
 
 @theme inline {
@@ -85,6 +121,7 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-light: var(--primary-light);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
@@ -121,5 +158,13 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply text-foreground;
   }
 }

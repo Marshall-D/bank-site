@@ -13,3 +13,16 @@ export const SHIELD = {
   src: "/brcb-shield.png",
   alt: `${BRAND_NAME} shield`,
 } as const;
+
+/**
+ * Brand palette — keep in sync with CSS variables in `src/app/globals.css`.
+ * Theme tokens (primary, secondary, etc.) are defined in globals.css, not here.
+ */
+export const BRAND_COLORS = {
+  /** primary — "British Royal" wordmark navy */
+  navy: "#043B78",
+  /** primary-light — shield sky / wave accent */
+  cyan: "#0FBBD1",
+  /** secondary — "Caribbean Bank" wordmark gold */
+  gold: "#EBB516",
+} as const;

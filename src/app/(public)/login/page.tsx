@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Logo } from '@/components/brand/Logo'
+import { BRAND_NAME } from '@/lib/brand'
 import { Eye, EyeOff } from 'lucide-react'
 
 export default function LoginPage() {
@@ -40,12 +42,13 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-gradient-to-br from-background to-muted">
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12 bg-gradient-to-br from-background to-muted">
+      <Logo size="lg" className="mb-8 max-w-[min(100%,54rem)]" />
       <Card className="w-full max-w-md border-border">
         <CardHeader className="space-y-2">
           <CardTitle className="text-2xl">Welcome back</CardTitle>
           <CardDescription>
-            Sign in to your FinanceHub account to manage your finances
+            Sign in to your {BRAND_NAME} account to manage your finances
           </CardDescription>
         </CardHeader>
         <CardContent>

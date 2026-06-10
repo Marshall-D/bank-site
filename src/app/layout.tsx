@@ -1,6 +1,9 @@
 import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+
+import { BRAND_NAME } from '@/lib/brand'
+
 import './globals.css'
 
 const geistSans = Geist({ 
@@ -13,26 +16,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'FinanceHub - Modern Banking',
-  description: 'Experience modern banking with FinanceHub. Secure, fast, and user-friendly.',
-  generator: 'v0.app',
-  icons: {
-    icon: [
-      {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
-      },
-    ],
-    apple: '/apple-icon.png',
+  title: {
+    default: BRAND_NAME,
+    template: `%s | ${BRAND_NAME}`,
   },
+  description: `Experience modern banking with ${BRAND_NAME}. Secure, fast, and user-friendly.`,
 }
 
 export const viewport: Viewport = {

@@ -1,5 +1,7 @@
 import Link from 'next/link'
-import { CreditCard } from 'lucide-react'
+
+import { Logo } from '@/components/brand/Logo'
+import { BRAND_NAME } from '@/lib/brand'
 
 export function PublicFooter() {
   const currentYear = new Date().getFullYear()
@@ -11,12 +13,7 @@ export function PublicFooter() {
         <div className="grid grid-cols-1 gap-8 md:grid-cols-4 mb-8">
           {/* Brand */}
           <div>
-            <Link href="/" className="flex items-center gap-2 font-bold text-lg mb-4">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <CreditCard className="h-5 w-5" />
-              </div>
-              <span>FinanceHub</span>
-            </Link>
+            <Logo size="sm" className="mb-4 max-w-[42rem]" />
             <p className="text-sm text-muted-foreground">
               Modern banking for the digital age. Secure, fast, and transparent.
             </p>
@@ -106,7 +103,7 @@ export function PublicFooter() {
 
         {/* Bottom */}
         <div className="border-t border-border pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-muted-foreground">
-          <p>&copy; {currentYear} FinanceHub. All rights reserved.</p>
+          <p>&copy; {currentYear} {BRAND_NAME}. All rights reserved.</p>
           <div className="flex gap-6 mt-4 md:mt-0">
             <Link href="/" className="hover:text-foreground transition-colors">
               Twitter

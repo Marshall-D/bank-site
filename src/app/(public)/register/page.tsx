@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Logo } from '@/components/brand/Logo'
+import { BRAND_NAME } from '@/lib/brand'
 import { Eye, EyeOff, CheckCircle2 } from 'lucide-react'
 
 export default function RegisterPage() {
@@ -51,12 +53,13 @@ export default function RegisterPage() {
   const isFormValid = formData.fullName && formData.email && formData.password && formData.agreeToTerms
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-gradient-to-br from-background to-muted">
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12 bg-gradient-to-br from-background to-muted">
+      <Logo size="lg" className="mb-8 max-w-[min(100%,54rem)]" />
       <Card className="w-full max-w-md border-border">
         <CardHeader className="space-y-2">
           <CardTitle className="text-2xl">Create account</CardTitle>
           <CardDescription>
-            Join FinanceHub and start managing your finances
+            Join {BRAND_NAME} and start managing your finances
           </CardDescription>
         </CardHeader>
         <CardContent>

@@ -1,6 +1,11 @@
 'use client'
 
-import { currentUser } from '@/lib/mock-data'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { Bell, LogOut, Menu, Settings, User, X } from 'lucide-react'
+
+import { Logo } from '@/components/brand/Logo'
+import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,30 +14,52 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Button } from '@/components/ui/button'
-import { Bell, Settings, LogOut, User } from 'lucide-react'
-import Link from 'next/link'
+import { useDashboardNav } from '@/components/layout/dashboard-nav'
+import { currentUser } from '@/lib/mock-data'
 
 export function DashboardHeader() {
+  const pathname = usePathname()
+  const { isOpen, toggle } = useDashboardNav()
+  const isAdmin = pathname.startsWith('/admin')
+  const logoHref = isAdmin ? '/admin' : '/dashboard'
+
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="flex h-16 items-center justify-between px-4 md:px-6">
-        <div>
-          <h1 className="text-lg font-semibold">Welcome back, {currentUser.name}!</h1>
+      <div className="flex h-16 items-center gap-2 px-4 md:gap-4 md:px-6">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="shrink-0 lg:hidden"
+          onClick={toggle}
+          aria-expanded={isOpen}
+          aria-label={isOpen ? 'Close navigation menu' : 'Open navigation menu'}
+        >
+          {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </Button>
+
+        <Logo
+          size="xs"
+          href={logoHref}
+          className="shrink-0 max-w-[7.5rem] sm:max-w-[9rem] lg:hidden"
+        />
+
+        <div className="min-w-0 flex-1">
+          <h1 className="truncate text-base font-semibold md:text-lg">
+            Welcome back, {currentUser.name}!
+          </h1>
         </div>
 
-        <div className="flex items-center gap-4">
-          {/* Notifications */}
+        <div className="flex shrink-0 items-center gap-1 sm:gap-2">
           <Button variant="ghost" size="icon" className="relative">
             <Bell className="h-5 w-5" />
-            <span className="absolute top-2 right-2 w-2 h-2 bg-destructive rounded-full" />
+            <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-destructive" />
           </Button>
 
-          {/* User Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-full">
-                <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-sm">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
                   {currentUser.name.charAt(0)}
                 </div>
               </Button>
@@ -57,7 +84,7 @@ export function DashboardHeader() {
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem>
-                <LogOut className="h-4 w-4 mr-2" />
+                <LogOut className="mr-2 h-4 w-4" />
                 <span>Logout</span>
               </DropdownMenuItem>
             </DropdownMenuContent>

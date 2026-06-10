@@ -2,8 +2,9 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { Logo } from '@/components/brand/Logo'
 import { Button } from '@/components/ui/button'
-import { CreditCard, Menu, X } from 'lucide-react'
+import { Menu, X } from 'lucide-react'
 import { useState } from 'react'
 
 export function PublicHeader() {
@@ -19,14 +20,8 @@ export function PublicHeader() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <nav className="container flex h-16 items-center justify-between px-4">
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 font-bold text-xl">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <CreditCard className="h-5 w-5" />
-          </div>
-          <span>FinanceHub</span>
-        </Link>
+      <nav className="container flex h-32 items-center justify-between px-4">
+        <Logo size="sm" priority className="max-w-[min(100%,33rem)] sm:max-w-[42rem]" />
 
         {/* Desktop Navigation */}
         <div className="hidden items-center gap-1 md:flex">
@@ -70,7 +65,7 @@ export function PublicHeader() {
 
         {/* Mobile Navigation */}
         {isMenuOpen && (
-          <div className="absolute top-16 left-0 right-0 border-b border-border bg-background md:hidden">
+          <div className="absolute top-32 left-0 right-0 border-b border-border bg-background md:hidden">
             <div className="flex flex-col space-y-1 p-4">
               {navItems.map((item) => (
                 <Link

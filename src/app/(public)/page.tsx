@@ -1,7 +1,11 @@
+import Image from 'next/image'
 import Link from 'next/link'
+import { CheckCircle2, Globe, Lock, Shield, TrendingUp, Zap } from 'lucide-react'
+
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { CheckCircle2, Shield, TrendingUp, Zap, Lock, Globe } from 'lucide-react'
+import { BRAND_NAME } from '@/lib/brand'
+import { HOME_IMAGES } from '@/lib/site-images'
 
 export default function HomePage() {
   const features = [
@@ -55,23 +59,24 @@ export default function HomePage() {
     },
   ]
 
+  const { branchExterior, branchInterior, skyline } = HOME_IMAGES
+
   return (
     <>
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-b from-primary-light/15 via-background to-background py-20 sm:py-32">
-        <div className="container px-4 max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-8 items-center">
-            {/* Left Content */}
+        <div className="container mx-auto max-w-6xl px-4">
+          <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2 lg:gap-8">
             <div className="flex flex-col justify-center space-y-8">
               <div className="space-y-4">
-                <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-pretty">
+                <h1 className="text-4xl font-bold text-pretty sm:text-5xl md:text-6xl">
                   Banking for the modern era
                 </h1>
                 <p className="text-xl text-muted-foreground text-pretty">
                   Fast, secure, and transparent banking without the complexity. Open an account in minutes.
                 </p>
               </div>
-              <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex flex-col gap-4 sm:flex-row">
                 <Button size="lg" asChild>
                   <Link href="/register">Open Account</Link>
                 </Button>
@@ -91,25 +96,18 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Right Visual */}
             <div className="relative">
               <div className="absolute inset-0 rounded-3xl bg-gradient-to-tr from-primary-light/30 to-secondary/10 blur-3xl" />
-              <div className="relative bg-gradient-to-br from-card to-muted rounded-3xl p-8 border border-border shadow-lg">
-                <div className="space-y-4">
-                  <div className="h-12 w-32 bg-muted rounded-lg" />
-                  <div className="space-y-2">
-                    <div className="h-4 w-24 bg-muted rounded" />
-                    <div className="h-4 w-40 bg-muted rounded" />
-                  </div>
-                  <div className="pt-4 border-t border-border">
-                    <div className="h-3 w-20 bg-muted rounded mt-4" />
-                    <div className="grid grid-cols-3 gap-4 mt-6">
-                      {[1, 2, 3].map((i) => (
-                        <div key={i} className="h-12 bg-muted rounded-lg" />
-                      ))}
-                    </div>
-                  </div>
-                </div>
+              <div className="relative aspect-[3/2] w-full overflow-hidden rounded-3xl border border-border shadow-lg">
+                <Image
+                  src={branchExterior.src}
+                  alt={branchExterior.alt}
+                  width={branchExterior.width}
+                  height={branchExterior.height}
+                  priority
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                  className="h-full w-full object-cover"
+                />
               </div>
             </div>
           </div>
@@ -117,21 +115,36 @@ export default function HomePage() {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 sm:py-32 bg-card border-t border-border">
-        <div className="container px-4 max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-pretty">Why choose FinanceHub?</h2>
+      <section className="border-t border-border bg-card py-20 sm:py-32">
+        <div className="container mx-auto max-w-6xl px-4">
+          <div className="mb-16 text-center">
+            <h2 className="mb-4 text-3xl font-bold text-pretty sm:text-4xl">
+              Why choose {BRAND_NAME}?
+            </h2>
             <p className="text-lg text-muted-foreground text-pretty">
-              We&apos;ve reimagined banking from the ground up
+              Real branches, modern technology, and banking built for the Caribbean
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+
+          <div className="relative mb-16 aspect-[21/9] w-full overflow-hidden rounded-2xl border border-border shadow-md">
+            <Image
+              src={branchInterior.src}
+              alt={branchInterior.alt}
+              width={branchInterior.width}
+              height={branchInterior.height}
+              sizes="(max-width: 768px) 100vw, 1152px"
+              className="h-full w-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-primary/40 via-transparent to-transparent" />
+          </div>
+
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
             {features.map((feature) => {
               const Icon = feature.icon
               return (
                 <Card key={feature.title} className="border-border">
                   <CardHeader>
-                    <div className="flex items-center gap-4 mb-2">
+                    <div className="mb-2 flex items-center gap-4">
                       <div className="rounded-lg bg-primary-light/15 p-2">
                         <Icon className="h-6 w-6 text-primary" />
                       </div>
@@ -150,14 +163,14 @@ export default function HomePage() {
 
       {/* Products Section */}
       <section className="py-20 sm:py-32">
-        <div className="container px-4 max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-pretty">Our Products</h2>
+        <div className="container mx-auto max-w-6xl px-4">
+          <div className="mb-16 text-center">
+            <h2 className="mb-4 text-3xl font-bold text-pretty sm:text-4xl">Our Products</h2>
             <p className="text-lg text-muted-foreground text-pretty">
               Choose the account that fits your lifestyle
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
             {products.map((product) => (
               <Card key={product.name} className="flex flex-col border-border">
                 <CardHeader>
@@ -165,8 +178,8 @@ export default function HomePage() {
                   <CardDescription>{product.description}</CardDescription>
                 </CardHeader>
                 <CardContent className="flex-1">
-                  <div className="text-2xl font-bold text-primary mb-4">{product.price}</div>
-                  <ul className="space-y-2 text-sm text-muted-foreground mb-6">
+                  <div className="mb-4 text-2xl font-bold text-primary">{product.price}</div>
+                  <ul className="mb-6 space-y-2 text-sm text-muted-foreground">
                     <li className="flex items-center gap-2">
                       <CheckCircle2 className="h-4 w-4 text-primary" />
                       Unlimited transfers
@@ -193,13 +206,21 @@ export default function HomePage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 sm:py-32 bg-primary text-primary-foreground">
-        <div className="container px-4 max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-pretty">
+      <section className="relative overflow-hidden py-20 text-primary-foreground sm:py-32">
+        <Image
+          src={skyline.src}
+          alt={skyline.alt}
+          fill
+          sizes="100vw"
+          className="object-cover"
+        />
+        <div className="absolute inset-0 bg-primary/85" />
+        <div className="relative z-10 container mx-auto max-w-3xl px-4 text-center">
+          <h2 className="mb-4 text-3xl font-bold text-pretty sm:text-4xl">
             Ready to take control of your finances?
           </h2>
-          <p className="text-lg opacity-90 mb-8 text-pretty">
-            Join thousands of users who trust FinanceHub with their banking needs.
+          <p className="mb-8 text-lg opacity-90 text-pretty">
+            Join thousands of customers who trust {BRAND_NAME} with their banking needs.
           </p>
           <Button size="lg" variant="secondary" asChild>
             <Link href="/register">Open Account Today</Link>

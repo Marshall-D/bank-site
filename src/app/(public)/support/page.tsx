@@ -1,16 +1,22 @@
 'use client'
 
+import Image from 'next/image'
 import { useState } from 'react'
+import { ChevronDown, ChevronUp, Mail, MessageCircle, Phone } from 'lucide-react'
+
 import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Mail, Phone, MessageCircle, ChevronDown, ChevronUp } from 'lucide-react'
+import { BRAND_NAME, BRAND_SHORT } from '@/lib/brand'
+import { SUPPORT_IMAGES } from '@/lib/site-images'
 
 export default function SupportPage() {
   const [expandedFAQ, setExpandedFAQ] = useState<string | null>(null)
   const [isSubmitted, setIsSubmitted] = useState(false)
+
+  const { helpDesk } = SUPPORT_IMAGES
 
   const faqs = [
     {
@@ -21,7 +27,7 @@ export default function SupportPage() {
     {
       id: 'faq-2',
       question: 'How long does a transfer take?',
-      answer: 'Transfers between FinanceHub accounts are instant. External transfers typically complete within 1-3 business days.',
+      answer: `Transfers between ${BRAND_SHORT} accounts are instant. External transfers typically complete within 1-3 business days.`,
     },
     {
       id: 'faq-3',
@@ -54,33 +60,45 @@ export default function SupportPage() {
   return (
     <>
       {/* Hero Section */}
-      <section className="py-20 sm:py-32 bg-gradient-to-b from-primary/5 to-transparent">
-        <div className="container px-4 max-w-4xl mx-auto text-center">
-          <h1 className="text-4xl sm:text-5xl font-bold mb-6 text-pretty">
-            How can we help?
-          </h1>
-          <p className="text-xl text-muted-foreground text-pretty">
-            Get answers to common questions or contact our support team
-          </p>
+      <section className="relative overflow-hidden bg-gradient-to-b from-primary-light/10 to-transparent py-16 sm:py-24">
+        <div className="container mx-auto max-w-5xl px-4">
+          <div className="mb-10 text-center">
+            <h1 className="mb-6 text-4xl font-bold text-pretty sm:text-5xl">How can we help?</h1>
+            <p className="mx-auto max-w-2xl text-xl text-muted-foreground text-pretty">
+              Get answers to common questions or contact our support team
+            </p>
+          </div>
+          <div className="relative aspect-[21/9] w-full overflow-hidden rounded-2xl border border-border shadow-lg">
+            <Image
+              src={helpDesk.src}
+              alt={helpDesk.alt}
+              width={helpDesk.width}
+              height={helpDesk.height}
+              priority
+              sizes="(max-width: 1024px) 100vw, 1024px"
+              className="h-full w-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-primary/30 via-transparent to-transparent" />
+          </div>
         </div>
       </section>
 
       {/* Contact Methods */}
       <section className="py-20 sm:py-32">
-        <div className="container px-4 max-w-4xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+        <div className="container mx-auto max-w-4xl px-4">
+          <div className="mb-16 grid grid-cols-1 gap-8 md:grid-cols-3">
             {[
               {
                 icon: Mail,
                 title: 'Email',
                 description: 'Response within 2 hours',
-                contact: 'support@financehub.com',
+                contact: 'support@brcb.com',
               },
               {
                 icon: Phone,
                 title: 'Phone',
                 description: 'Available 24/7',
-                contact: '+1 (800) FINANCE-HUB',
+                contact: '+1 (800) 272-2253',
               },
               {
                 icon: MessageCircle,
@@ -91,15 +109,15 @@ export default function SupportPage() {
             ].map((method) => {
               const Icon = method.icon
               return (
-                <Card key={method.title} className="text-center border-border">
+                <Card key={method.title} className="border-border text-center">
                   <CardContent className="pt-6">
-                    <div className="flex justify-center mb-4">
-                      <div className="p-3 bg-primary/10 rounded-lg">
+                    <div className="mb-4 flex justify-center">
+                      <div className="rounded-lg bg-primary/10 p-3">
                         <Icon className="h-6 w-6 text-primary" />
                       </div>
                     </div>
-                    <h3 className="font-semibold text-lg mb-2">{method.title}</h3>
-                    <p className="text-sm text-muted-foreground mb-4">{method.description}</p>
+                    <h3 className="mb-2 text-lg font-semibold">{method.title}</h3>
+                    <p className="mb-4 text-sm text-muted-foreground">{method.description}</p>
                     <p className="font-medium text-primary">{method.contact}</p>
                   </CardContent>
                 </Card>
@@ -110,80 +128,99 @@ export default function SupportPage() {
       </section>
 
       {/* Contact Form */}
-      <section className="py-20 sm:py-32 bg-card border-y border-border">
-        <div className="container px-4 max-w-2xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-12">Send us a message</h2>
+      <section className="border-y border-border bg-card py-20 sm:py-32">
+        <div className="container mx-auto max-w-5xl px-4">
+          <h2 className="mb-12 text-center text-3xl font-bold">Send us a message</h2>
 
-          <Card className="border-border">
-            <CardContent className="pt-6">
-              <form onSubmit={handleContactSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 items-stretch gap-8 lg:grid-cols-2 lg:gap-12">
+            <div className="relative min-h-[280px] overflow-hidden rounded-2xl border border-border shadow-md lg:min-h-0">
+              <Image
+                src={helpDesk.src}
+                alt={helpDesk.alt}
+                width={helpDesk.width}
+                height={helpDesk.height}
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                className="h-full w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-primary/50 via-primary/10 to-transparent" />
+              <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+                <p className="text-lg font-semibold">Real people, real help</p>
+                <p className="mt-1 text-sm text-white/90">
+                  Our {BRAND_NAME} support team is ready to assist you.
+                </p>
+              </div>
+            </div>
+
+            <Card className="border-border">
+              <CardContent className="pt-6">
+                <form onSubmit={handleContactSubmit} className="space-y-4">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="name">Name</Label>
+                      <Input id="name" placeholder="Your name" required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email</Label>
+                      <Input id="email" type="email" placeholder="your@email.com" required />
+                    </div>
+                  </div>
+
                   <div className="space-y-2">
-                    <Label htmlFor="name">Name</Label>
-                    <Input id="name" placeholder="Your name" required />
+                    <Label htmlFor="subject">Subject</Label>
+                    <Input id="subject" placeholder="How can we help?" required />
                   </div>
+
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input id="email" type="email" placeholder="your@email.com" required />
+                    <Label htmlFor="message">Message</Label>
+                    <Textarea
+                      id="message"
+                      placeholder="Describe your issue..."
+                      rows={5}
+                      required
+                    />
                   </div>
-                </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="subject">Subject</Label>
-                  <Input
-                    id="subject"
-                    placeholder="How can we help?"
-                    required
-                  />
-                </div>
+                  <Button type="submit" size="lg" className="w-full">
+                    Send Message
+                  </Button>
 
-                <div className="space-y-2">
-                  <Label htmlFor="message">Message</Label>
-                  <Textarea
-                    id="message"
-                    placeholder="Describe your issue..."
-                    rows={5}
-                    required
-                  />
-                </div>
-
-                <Button type="submit" size="lg" className="w-full">
-                  Send Message
-                </Button>
-
-                {isSubmitted && (
-                  <div className="p-4 bg-primary/10 text-primary rounded-lg text-sm font-medium">
-                    Thanks for reaching out! We&apos;ll respond within 2 hours.
-                  </div>
-                )}
-              </form>
-            </CardContent>
-          </Card>
+                  {isSubmitted && (
+                    <div className="rounded-lg bg-primary/10 p-4 text-sm font-medium text-primary">
+                      Thanks for reaching out! We&apos;ll respond within 2 hours.
+                    </div>
+                  )}
+                </form>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </section>
 
       {/* FAQ Section */}
       <section className="py-20 sm:py-32">
-        <div className="container px-4 max-w-3xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-12">Frequently Asked Questions</h2>
+        <div className="container mx-auto max-w-3xl px-4">
+          <h2 className="mb-12 text-center text-3xl font-bold">Frequently Asked Questions</h2>
 
           <div className="space-y-4">
             {faqs.map((faq) => (
-              <Card key={faq.id} className="border-border cursor-pointer hover:bg-muted/50 transition-colors">
+              <Card
+                key={faq.id}
+                className="cursor-pointer border-border transition-colors hover:bg-muted/50"
+              >
                 <button
                   onClick={() => setExpandedFAQ(expandedFAQ === faq.id ? null : faq.id)}
-                  className="w-full p-6 flex items-center justify-between"
+                  className="flex w-full items-center justify-between p-6"
                 >
-                  <h3 className="font-semibold text-lg text-left">{faq.question}</h3>
+                  <h3 className="text-left text-lg font-semibold">{faq.question}</h3>
                   {expandedFAQ === faq.id ? (
-                    <ChevronUp className="h-5 w-5 flex-shrink-0 text-muted-foreground" />
+                    <ChevronUp className="h-5 w-5 shrink-0 text-muted-foreground" />
                   ) : (
-                    <ChevronDown className="h-5 w-5 flex-shrink-0 text-muted-foreground" />
+                    <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground" />
                   )}
                 </button>
 
                 {expandedFAQ === faq.id && (
-                  <div className="px-6 pb-6 border-t border-border pt-4 text-muted-foreground">
+                  <div className="border-t border-border px-6 pb-6 pt-4 text-muted-foreground">
                     {faq.answer}
                   </div>
                 )}

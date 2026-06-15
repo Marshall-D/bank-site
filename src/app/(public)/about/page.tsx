@@ -1,7 +1,26 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import Image from 'next/image'
 import { CheckCircle2 } from 'lucide-react'
 
+import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { BRAND_NAME, BRAND_SHORT } from '@/lib/brand'
+import { ABOUT_IMAGES } from '@/lib/site-images'
+
 export default function AboutPage() {
+  const {
+    teamEntrance,
+    branchInterior,
+    milestone2020,
+    headshotCeo,
+    headshotCto,
+    headshotCpo,
+  } = ABOUT_IMAGES
+
+  const leadership = [
+    { name: 'Sarah Johnson', role: 'CEO & Co-founder', image: headshotCeo },
+    { name: 'Michael Chen', role: 'CTO & Co-founder', image: headshotCto },
+    { name: 'Emily Rodriguez', role: 'Chief Product Officer', image: headshotCpo },
+  ]
+
   const values = [
     {
       title: 'Transparency',
@@ -22,58 +41,91 @@ export default function AboutPage() {
   ]
 
   const timeline = [
-    { year: '2020', event: 'FinanceHub founded with a mission to revolutionize banking' },
-    { year: '2021', event: 'Reached 100,000 active users and expanded to 50+ countries' },
+    {
+      year: '2020',
+      event: `${BRAND_SHORT} founded with a mission to bring modern banking to the Caribbean`,
+      image: milestone2020,
+    },
+    { year: '2021', event: 'Reached 100,000 active customers and expanded across the region' },
     { year: '2022', event: 'Launched business accounts and multi-currency support' },
-    { year: '2023', event: 'Introduced API for developers and business integrations' },
-    { year: '2024', event: 'Became the fastest-growing fintech platform in the region' },
+    { year: '2023', event: 'Introduced digital banking API for business integrations' },
+    { year: '2024', event: 'Opened new branches and became a fastest-growing bank in the region' },
   ]
 
   return (
     <>
       {/* Hero Section */}
-      <section className="py-20 sm:py-32 bg-gradient-to-b from-primary/5 to-transparent">
-        <div className="container px-4 max-w-4xl mx-auto text-center">
-          <h1 className="text-4xl sm:text-5xl font-bold mb-6 text-pretty">
-            About FinanceHub
-          </h1>
-          <p className="text-xl text-muted-foreground text-pretty">
-            We&apos;re on a mission to make banking simple, transparent, and accessible to everyone.
-          </p>
+      <section className="relative overflow-hidden bg-gradient-to-b from-primary-light/10 to-transparent py-16 sm:py-24">
+        <div className="container mx-auto max-w-5xl px-4">
+          <div className="mb-10 text-center">
+            <h1 className="mb-6 text-4xl font-bold text-pretty sm:text-5xl">
+              About {BRAND_NAME}
+            </h1>
+            <p className="mx-auto max-w-2xl text-xl text-muted-foreground text-pretty">
+              We&apos;re on a mission to make banking simple, transparent, and accessible across the Caribbean.
+            </p>
+          </div>
+          <div className="relative aspect-[21/9] w-full overflow-hidden rounded-2xl border border-border shadow-lg">
+            <Image
+              src={teamEntrance.src}
+              alt={teamEntrance.alt}
+              width={teamEntrance.width}
+              height={teamEntrance.height}
+              priority
+              sizes="(max-width: 1024px) 100vw, 1024px"
+              className="h-full w-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-primary/30 via-transparent to-transparent" />
+          </div>
         </div>
       </section>
 
       {/* Story Section */}
       <section className="py-20 sm:py-32">
-        <div className="container px-4 max-w-4xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+        <div className="container mx-auto max-w-4xl px-4">
+          <div className="grid grid-cols-1 items-center gap-12 md:grid-cols-2">
             <div>
-              <h2 className="text-3xl font-bold mb-6">Our Story</h2>
+              <h2 className="mb-6 text-3xl font-bold">Our Story</h2>
               <div className="space-y-4 text-muted-foreground">
                 <p>
-                  FinanceHub was born from frustration. Our founders experienced the pain of outdated banking systems, hidden fees, and poor user experiences.
+                  {BRAND_NAME} was born from a simple belief: Caribbean communities deserve banking
+                  that is modern, transparent, and deeply local.
                 </p>
                 <p>
-                  In 2020, they decided to build something better—a bank designed for the modern world.
+                  In 2020, our founders set out to combine the trust of traditional banking with
+                  technology built for today.
                 </p>
                 <p>
-                  Today, FinanceHub serves over 2 million customers across 190 countries, and we&apos;re just getting started.
+                  Today we serve customers across the region from physical branches and digital
+                  channels — and we&apos;re just getting started.
                 </p>
               </div>
             </div>
-            <div className="bg-card rounded-3xl p-8 border border-border">
-              <div className="space-y-4 text-center">
-                <div className="text-4xl font-bold text-primary">2M+</div>
-                <div className="text-muted-foreground">Active Users</div>
+            <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-md">
+              <div className="relative aspect-[4/3] w-full">
+                <Image
+                  src={branchInterior.src}
+                  alt={branchInterior.alt}
+                  width={branchInterior.width}
+                  height={branchInterior.height}
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  className="h-full w-full object-cover"
+                />
               </div>
-              <div className="grid grid-cols-2 gap-4 mt-8 pt-8 border-t border-border">
-                <div className="text-center">
-                  <div className="text-2xl font-bold">190+</div>
-                  <div className="text-xs text-muted-foreground">Countries</div>
+              <div className="p-8">
+                <div className="space-y-4 text-center">
+                  <div className="text-4xl font-bold text-primary">2M+</div>
+                  <div className="text-muted-foreground">Active Customers</div>
                 </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold">$5B+</div>
-                  <div className="text-xs text-muted-foreground">Transactions</div>
+                <div className="mt-8 grid grid-cols-2 gap-4 border-t border-border pt-8">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold">190+</div>
+                    <div className="text-xs text-muted-foreground">Countries Served</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold">$5B+</div>
+                    <div className="text-xs text-muted-foreground">Transactions</div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -82,22 +134,20 @@ export default function AboutPage() {
       </section>
 
       {/* Values Section */}
-      <section className="py-20 sm:py-32 bg-card border-t border-border">
-        <div className="container px-4 max-w-4xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-12">Our Values</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <section className="border-t border-border bg-card py-20 sm:py-32">
+        <div className="container mx-auto max-w-4xl px-4">
+          <h2 className="mb-12 text-center text-3xl font-bold">Our Values</h2>
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
             {values.map((value) => (
               <Card key={value.title} className="border-border">
                 <CardHeader>
                   <div className="flex items-start gap-4">
-                    <div className="p-2 bg-primary/10 rounded-lg mt-1">
+                    <div className="mt-1 rounded-lg bg-primary-light/15 p-2">
                       <CheckCircle2 className="h-5 w-5 text-primary" />
                     </div>
                     <div>
                       <CardTitle>{value.title}</CardTitle>
-                      <CardDescription className="mt-2">
-                        {value.description}
-                      </CardDescription>
+                      <CardDescription className="mt-2">{value.description}</CardDescription>
                     </div>
                   </div>
                 </CardHeader>
@@ -109,21 +159,33 @@ export default function AboutPage() {
 
       {/* Timeline Section */}
       <section className="py-20 sm:py-32">
-        <div className="container px-4 max-w-3xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-12">Our Journey</h2>
+        <div className="container mx-auto max-w-3xl px-4">
+          <h2 className="mb-12 text-center text-3xl font-bold">Our Journey</h2>
           <div className="space-y-8">
             {timeline.map((item, index) => (
               <div key={item.year} className="flex gap-6">
                 <div className="flex flex-col items-center">
-                  <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-sm">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
                     {item.year}
                   </div>
                   {index !== timeline.length - 1 && (
-                    <div className="w-1 h-12 bg-border mt-2" />
+                    <div className="mt-2 h-12 w-1 bg-border" />
                   )}
                 </div>
-                <div className="pb-8 pt-2">
-                  <p className="text-foreground font-medium">{item.event}</p>
+                <div className="flex-1 pb-8 pt-2">
+                  <p className="font-medium text-foreground">{item.event}</p>
+                  {'image' in item && item.image ? (
+                    <div className="relative mt-4 aspect-video w-full overflow-hidden rounded-xl border border-border shadow-sm">
+                      <Image
+                        src={item.image.src}
+                        alt={item.image.alt}
+                        width={item.image.width}
+                        height={item.image.height}
+                        sizes="(max-width: 768px) 100vw, 672px"
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                  ) : null}
                 </div>
               </div>
             ))}
@@ -132,21 +194,24 @@ export default function AboutPage() {
       </section>
 
       {/* Team Section */}
-      <section className="py-20 sm:py-32 bg-card border-t border-border">
-        <div className="container px-4 max-w-4xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-12">Leadership Team</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              { name: 'Sarah Johnson', role: 'CEO & Co-founder', initials: 'SJ' },
-              { name: 'Michael Chen', role: 'CTO & Co-founder', initials: 'MC' },
-              { name: 'Emily Rodriguez', role: 'Chief Product Officer', initials: 'ER' },
-            ].map((member) => (
+      <section className="border-t border-border bg-card py-20 sm:py-32">
+        <div className="container mx-auto max-w-4xl px-4">
+          <h2 className="mb-12 text-center text-3xl font-bold">Leadership Team</h2>
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+            {leadership.map((member) => (
               <div key={member.name} className="text-center">
-                <div className="w-24 h-24 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-2xl mx-auto mb-4">
-                  {member.initials}
+                <div className="relative mx-auto mb-4 h-28 w-28 overflow-hidden rounded-full border-2 border-primary-light/40 shadow-md">
+                  <Image
+                    src={member.image.src}
+                    alt={member.image.alt}
+                    width={member.image.width}
+                    height={member.image.height}
+                    sizes="112px"
+                    className="h-full w-full object-cover object-top"
+                  />
                 </div>
-                <h3 className="font-semibold text-lg">{member.name}</h3>
-                <p className="text-muted-foreground text-sm">{member.role}</p>
+                <h3 className="text-lg font-semibold">{member.name}</h3>
+                <p className="text-sm text-muted-foreground">{member.role}</p>
               </div>
             ))}
           </div>

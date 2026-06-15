@@ -2,11 +2,14 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { ArrowLeft, CheckCircle2 } from 'lucide-react'
+
+import { Logo } from '@/components/brand/Logo'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { CheckCircle2, ArrowLeft } from 'lucide-react'
+import { BRAND_NAME } from '@/lib/brand'
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
@@ -26,7 +29,8 @@ export default function ForgotPasswordPage() {
 
   if (isSubmitted) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-gradient-to-br from-background to-muted">
+      <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-primary-light/10 via-background to-muted px-4 py-12">
+        <Logo size="lg" className="mb-8 max-w-[min(100%,54rem)]" />
         <Card className="w-full max-w-md border-border">
           <CardContent className="pt-12">
             <div className="text-center space-y-4">
@@ -58,12 +62,13 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-gradient-to-br from-background to-muted">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-primary-light/10 via-background to-muted px-4 py-12">
+      <Logo size="lg" className="mb-8 max-w-[min(100%,54rem)]" />
       <Card className="w-full max-w-md border-border">
         <CardHeader className="space-y-2">
           <CardTitle className="text-2xl">Reset your password</CardTitle>
           <CardDescription>
-            Enter your email address and we&apos;ll send you a link to reset your password
+            Enter your {BRAND_NAME} email and we&apos;ll send you a link to reset your password
           </CardDescription>
         </CardHeader>
         <CardContent>

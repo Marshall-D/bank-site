@@ -10,23 +10,30 @@ import {
   ID_DOCUMENT_TYPE_OPTIONS,
   PROOF_OF_ADDRESS_TYPE_OPTIONS,
 } from '@/lib/application/constants'
+import type { LocalDocumentFile, LocalDocumentsState } from '@/lib/application/localDocuments'
 import type { ApplicationFormState } from '@/lib/application/types'
+import { DocumentUploadField } from '../DocumentUploadField'
 import { FormField } from '../FormField'
 
 type DocumentsStepProps = {
   form: ApplicationFormState
+  localDocuments: LocalDocumentsState
   errors: Record<string, string>
   onChange: (updates: Partial<ApplicationFormState>) => void
+  onDocumentSelect: (slot: LocalDocumentFile['slot'], file: File) => void
+  onDocumentRemove: (slot: LocalDocumentFile['slot']) => void
 }
 
-export function DocumentsStep({ form, errors, onChange }: DocumentsStepProps) {
+export function DocumentsStep({
+  form,
+  localDocuments,
+  errors,
+  onChange,
+  onDocumentSelect,
+  onDocumentRemove,
+}: DocumentsStepProps) {
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border border-border bg-muted/40 p-4 text-sm text-muted-foreground">
-        Document upload is coming soon. For now, your document details will be saved with
-        the application and verified during review.
-      </div>
-
       <div>
         <h3 className="mb-4 text-lg font-medium">Government ID</h3>
         <div className="space-y-4">
@@ -91,6 +98,27 @@ export function DocumentsStep({ form, errors, onChange }: DocumentsStepProps) {
               />
             </FormField>
           </div>
+
+          <DocumentUploadField
+            id="idFrontFile"
+            label="ID front image"
+            hint="Upload a clear photo of the front of your ID."
+            required
+            value={localDocuments.idFront}
+            error={errors.idFrontFile}
+            onSelect={(file) => onDocumentSelect('idFront', file)}
+            onRemove={() => onDocumentRemove('idFront')}
+          />
+
+          <DocumentUploadField
+            id="idBackFile"
+            label="ID back image (optional)"
+            hint="Required for national ID or driver's license if applicable."
+            value={localDocuments.idBack}
+            error={errors.idBackFile}
+            onSelect={(file) => onDocumentSelect('idBack', file)}
+            onRemove={() => onDocumentRemove('idBack')}
+          />
         </div>
       </div>
 
@@ -131,6 +159,17 @@ export function DocumentsStep({ form, errors, onChange }: DocumentsStepProps) {
               onChange={(e) => onChange({ proofOfAddressIssueDate: e.target.value })}
             />
           </FormField>
+
+          <DocumentUploadField
+            id="proofOfAddressFile"
+            label="Proof of address image"
+            hint="Utility bill, bank statement, or lease agreement dated within the last 3 months."
+            required
+            value={localDocuments.proofOfAddress}
+            error={errors.proofOfAddressFile}
+            onSelect={(file) => onDocumentSelect('proofOfAddress', file)}
+            onRemove={() => onDocumentRemove('proofOfAddress')}
+          />
         </div>
       </div>
     </div>

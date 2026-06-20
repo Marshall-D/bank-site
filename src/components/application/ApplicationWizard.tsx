@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Logo } from '@/components/brand/Logo'
@@ -24,6 +24,16 @@ import {
   ApplicationApiError,
   getApplicationErrorMessage,
 } from '@/lib/application/errors'
+import {
+  createLocalDocumentFile,
+  emptyLocalDocumentsState,
+  revokeAllLocalDocumentPreviews,
+  revokeLocalDocumentPreview,
+  validateDocumentFile,
+  validateLocalDocuments,
+  type LocalDocumentFile,
+  type LocalDocumentsState,
+} from '@/lib/application/localDocuments'
 import { mapFormToPayload } from '@/lib/application/mapFormToPayload'
 import type { AddressFormState, ApplicationFormState } from '@/lib/application/types'
 import {
@@ -43,9 +53,17 @@ export function ApplicationWizard() {
   const router = useRouter()
   const [step, setStep] = useState(1)
   const [form, setForm] = useState<ApplicationFormState>(defaultApplicationFormState)
+  const [localDocuments, setLocalDocuments] =
+    useState<LocalDocumentsState>(emptyLocalDocumentsState)
+  const localDocumentsRef = useRef(localDocuments)
+  localDocumentsRef.current = localDocuments
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  useEffect(() => {
+    return () => revokeAllLocalDocumentPreviews(localDocumentsRef.current)
+  }, [])
 
   const updateForm = (updates: Partial<ApplicationFormState>) => {
     setForm((prev) => ({ ...prev, ...updates }))
@@ -67,6 +85,49 @@ export function ApplicationWizard() {
       mailingAddress: { ...prev.mailingAddress, ...updates },
     }))
     setFieldErrors({})
+  }
+
+  const handleDocumentSelect = (slot: LocalDocumentFile['slot'], file: File) => {
+    const validationError = validateDocumentFile(file)
+    if (validationError) {
+      const errorKey =
+        slot === 'idFront'
+          ? 'idFrontFile'
+          : slot === 'idBack'
+            ? 'idBackFile'
+            : 'proofOfAddressFile'
+      setFieldErrors((prev) => ({ ...prev, [errorKey]: validationError }))
+      return
+    }
+
+    setLocalDocuments((prev) => {
+      const existing = prev[slot]
+      revokeLocalDocumentPreview(existing)
+      return {
+        ...prev,
+        [slot]: createLocalDocumentFile(slot, file),
+      }
+    })
+
+    setFieldErrors((prev) => {
+      const next = { ...prev }
+      const errorKey =
+        slot === 'idFront'
+          ? 'idFrontFile'
+          : slot === 'idBack'
+            ? 'idBackFile'
+            : 'proofOfAddressFile'
+      delete next[errorKey]
+      return next
+    })
+    setSubmitError(null)
+  }
+
+  const handleDocumentRemove = (slot: LocalDocumentFile['slot']) => {
+    setLocalDocuments((prev) => {
+      revokeLocalDocumentPreview(prev[slot])
+      return { ...prev, [slot]: null }
+    })
   }
 
   const validateCurrentStep = () => {
@@ -92,6 +153,14 @@ export function ApplicationWizard() {
       return
     }
 
+    if (step === 3) {
+      const documentErrors = validateLocalDocuments(localDocuments)
+      if (Object.keys(documentErrors).length > 0) {
+        setFieldErrors(documentErrors)
+        return
+      }
+    }
+
     setFieldErrors({})
     setStep((prev) => Math.min(prev + 1, TOTAL_STEPS))
   }
@@ -109,12 +178,19 @@ export function ApplicationWizard() {
       return
     }
 
+    const documentErrors = validateLocalDocuments(localDocuments)
+    if (Object.keys(documentErrors).length > 0) {
+      setFieldErrors(documentErrors)
+      setSubmitError('Please go back and upload the required document images.')
+      return
+    }
+
     setIsSubmitting(true)
     setSubmitError(null)
     setFieldErrors({})
 
     try {
-      const payload = mapFormToPayload(form)
+      const payload = mapFormToPayload(form, localDocuments)
       const response = await createApplication(payload)
       router.push(
         `/register/confirmation?ref=${encodeURIComponent(response.applicationReference)}`
@@ -156,13 +232,25 @@ export function ApplicationWizard() {
               />
             )}
             {step === 3 && (
-              <DocumentsStep form={form} errors={fieldErrors} onChange={updateForm} />
+              <DocumentsStep
+                form={form}
+                localDocuments={localDocuments}
+                errors={fieldErrors}
+                onChange={updateForm}
+                onDocumentSelect={handleDocumentSelect}
+                onDocumentRemove={handleDocumentRemove}
+              />
             )}
             {step === 4 && (
               <FinancialStep form={form} errors={fieldErrors} onChange={updateForm} />
             )}
             {step === 5 && (
-              <ReviewStep form={form} errors={fieldErrors} onChange={updateForm} />
+              <ReviewStep
+                form={form}
+                localDocuments={localDocuments}
+                errors={fieldErrors}
+                onChange={updateForm}
+              />
             )}
 
             {submitError && (

@@ -1,4 +1,6 @@
 import type { ApplicationFormState, CreateApplicationPayload } from './types'
+import type { LocalDocumentsState } from './localDocuments'
+import { sanitizeFilenameForId } from './localDocuments'
 
 function cleanAddress(address: ApplicationFormState['residentialAddress']) {
   return {
@@ -10,12 +12,20 @@ function cleanAddress(address: ApplicationFormState['residentialAddress']) {
   }
 }
 
-function buildPlaceholderFileId(prefix: string, email: string) {
+function buildPlaceholderFileId(
+  prefix: string,
+  email: string,
+  filename?: string
+) {
   const slug = email.toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 24)
-  return `placeholder_${prefix}_${slug}_${Date.now()}`
+  const filePart = filename ? `_${sanitizeFilenameForId(filename)}` : ''
+  return `placeholder_${prefix}_${slug}${filePart}_${Date.now()}`
 }
 
-export function mapFormToPayload(form: ApplicationFormState): CreateApplicationPayload {
+export function mapFormToPayload(
+  form: ApplicationFormState,
+  localDocuments?: LocalDocumentsState
+): CreateApplicationPayload {
   const monthlyEstimate = form.sourceOfFundsMonthlyEstimate.trim()
     ? Number(form.sourceOfFundsMonthlyEstimate)
     : undefined
@@ -37,11 +47,19 @@ export function mapFormToPayload(form: ApplicationFormState): CreateApplicationP
       number: form.idDocumentNumber.trim(),
       issuingCountry: form.idIssuingCountry.trim(),
       expiryDate: form.idExpiryDate,
-      frontFileId: buildPlaceholderFileId('id_front', form.email),
+      frontFileId: buildPlaceholderFileId(
+        'id_front',
+        form.email,
+        localDocuments?.idFront?.name
+      ),
     },
     proofOfAddressDocument: {
       type: form.proofOfAddressType as CreateApplicationPayload['proofOfAddressDocument']['type'],
-      fileId: buildPlaceholderFileId('proof_of_address', form.email),
+      fileId: buildPlaceholderFileId(
+        'proof_of_address',
+        form.email,
+        localDocuments?.proofOfAddress?.name
+      ),
       ...(form.proofOfAddressIssueDate
         ? { issueDate: form.proofOfAddressIssueDate }
         : {}),
@@ -97,6 +115,14 @@ export function mapFormToPayload(form: ApplicationFormState): CreateApplicationP
 
   if (form.pepDeclaration) {
     payload.pepDeclaration = true
+  }
+
+  if (localDocuments?.idBack) {
+    payload.idDocument.backFileId = buildPlaceholderFileId(
+      'id_back',
+      form.email,
+      localDocuments.idBack.name
+    )
   }
 
   return payload

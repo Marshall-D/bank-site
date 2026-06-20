@@ -8,10 +8,12 @@ import {
   SOURCE_OF_FUNDS_TYPE_OPTIONS,
 } from '@/lib/application/constants'
 import type { ApplicationFormState } from '@/lib/application/types'
+import type { LocalDocumentsState } from '@/lib/application/localDocuments'
 import { FieldError } from '../FormField'
 
 type ReviewStepProps = {
   form: ApplicationFormState
+  localDocuments: LocalDocumentsState
   errors: Record<string, string>
   onChange: (updates: Partial<ApplicationFormState>) => void
 }
@@ -33,7 +35,11 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
   )
 }
 
-export function ReviewStep({ form, errors, onChange }: ReviewStepProps) {
+function documentSummary(name: string | undefined) {
+  return name ?? ''
+}
+
+export function ReviewStep({ form, localDocuments, errors, onChange }: ReviewStepProps) {
   return (
     <div className="space-y-6">
       <div className="rounded-lg border border-border p-4">
@@ -54,9 +60,15 @@ export function ReviewStep({ form, errors, onChange }: ReviewStepProps) {
           label="ID document"
           value={`${labelFor(ID_DOCUMENT_TYPE_OPTIONS, form.idDocumentType)} · ${form.idDocumentNumber}`}
         />
+        <SummaryRow label="ID front image" value={documentSummary(localDocuments.idFront?.name)} />
+        <SummaryRow label="ID back image" value={documentSummary(localDocuments.idBack?.name)} />
         <SummaryRow
           label="Proof of address"
           value={labelFor(PROOF_OF_ADDRESS_TYPE_OPTIONS, form.proofOfAddressType)}
+        />
+        <SummaryRow
+          label="Proof of address image"
+          value={documentSummary(localDocuments.proofOfAddress?.name)}
         />
         <SummaryRow
           label="Source of funds"

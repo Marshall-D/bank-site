@@ -15,13 +15,16 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useDashboardNav } from '@/components/layout/dashboard-nav'
+import { useOptionalAdminAuth } from '@/components/admin/AdminAuthProvider'
 import { currentUser } from '@/lib/mock-data'
 
 export function DashboardHeader() {
   const pathname = usePathname()
   const { isOpen, toggle } = useDashboardNav()
+  const adminAuth = useOptionalAdminAuth()
   const isAdmin = pathname.startsWith('/admin')
   const logoHref = isAdmin ? '/admin' : '/dashboard'
+  const displayUser = isAdmin && adminAuth?.user ? adminAuth.user : currentUser
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -46,7 +49,7 @@ export function DashboardHeader() {
 
         <div className="min-w-0 flex-1">
           <h1 className="truncate text-base font-semibold md:text-lg">
-            Welcome back, {currentUser.name}!
+            Welcome back, {displayUser.name}!
           </h1>
         </div>
 
@@ -60,14 +63,14 @@ export function DashboardHeader() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-full">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
-                  {currentUser.name.charAt(0)}
+                  {displayUser.name.charAt(0)}
                 </div>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel className="flex flex-col space-y-1">
-                <p className="text-sm font-medium">{currentUser.name}</p>
-                <p className="text-xs text-muted-foreground">{currentUser.email}</p>
+                <p className="text-sm font-medium">{displayUser.name}</p>
+                <p className="text-xs text-muted-foreground">{displayUser.email}</p>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
@@ -83,7 +86,13 @@ export function DashboardHeader() {
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  if (isAdmin && adminAuth?.logout) {
+                    adminAuth.logout()
+                  }
+                }}
+              >
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Logout</span>
               </DropdownMenuItem>

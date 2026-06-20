@@ -7,10 +7,12 @@ import { LayoutDashboard, LogOut, Settings, Users } from 'lucide-react'
 import { Logo } from '@/components/brand/Logo'
 import { Button } from '@/components/ui/button'
 import { useDashboardNav } from '@/components/layout/dashboard-nav'
+import { useAdminAuth } from '@/components/admin/AdminAuthProvider'
 
 export function AdminSidebar() {
   const pathname = usePathname()
   const { isOpen, close } = useDashboardNav()
+  const { logout } = useAdminAuth()
 
   const navItems = [
     { href: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
@@ -57,7 +59,10 @@ export function AdminSidebar() {
             <Button
               variant="outline"
               className="w-full justify-start gap-3"
-              onClick={close}
+              onClick={() => {
+                close()
+                logout()
+              }}
             >
               <LogOut className="h-5 w-5" />
               <span>Logout</span>

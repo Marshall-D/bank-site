@@ -136,6 +136,14 @@ export type CreateApplicationResponse = {
   status: string
 }
 
+export type ApplicationStatusResponse = {
+  applicationReference: string
+  status: string
+  nextStep: string
+  submittedAt: string | null
+  needMoreInfoNotes?: string
+}
+
 export type ApiFieldError = {
   field: string
   message: string

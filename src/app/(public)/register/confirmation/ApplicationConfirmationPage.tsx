@@ -49,9 +49,22 @@ export default function ApplicationConfirmationPage() {
               </ul>
             </div>
 
-            <Button className="w-full" asChild>
-              <Link href="/">Return to home</Link>
-            </Button>
+            <div className="flex flex-col gap-3">
+              <Button className="w-full" asChild>
+                <Link
+                  href={
+                    applicationReference
+                      ? `/application/status?ref=${encodeURIComponent(applicationReference)}`
+                      : '/application/status'
+                  }
+                >
+                  Check application status
+                </Link>
+              </Button>
+              <Button variant="outline" className="w-full" asChild>
+                <Link href="/">Return to home</Link>
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>

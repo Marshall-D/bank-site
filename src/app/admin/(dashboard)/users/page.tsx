@@ -1,11 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import {
   Select,
   SelectContent,
@@ -13,71 +13,107 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { CheckCircle2, XCircle, Clock, Search } from 'lucide-react'
-import { pendingKYCUsers } from '@/lib/mock-data'
+import { CheckCircle2, Clock, Search, XCircle } from 'lucide-react'
+import { useAdminAuth } from '@/components/admin/AdminAuthProvider'
+import { Badge } from '@/components/ui/badge'
+import { fetchAdminApplications } from '@/lib/admin/applications/api'
+import type { AdminApplicationListItem } from '@/lib/admin/applications/types'
+import { getAdminAuthErrorMessage } from '@/lib/admin/errors'
+import { APPLICATION_STATUS_LABELS } from '@/lib/application/statusLabels'
 import { formatDate } from '@/lib/utils'
 
-type User = typeof pendingKYCUsers[0]
+type QueueFilter = 'all' | 'submitted' | 'pending_review' | 'approved' | 'rejected'
 
 export default function AdminUsersPage() {
+  const { token, logout } = useAdminAuth()
   const [searchTerm, setSearchTerm] = useState('')
-  const [filterStatus, setFilterStatus] = useState<string>('all')
-  const [selectedUser, setSelectedUser] = useState<User | null>(null)
-  const [reviewAction, setReviewAction] = useState<'approve' | 'reject' | null>(null)
-  const [reviewNotes, setReviewNotes] = useState('')
-
-  const filteredUsers = pendingKYCUsers.filter((user) => {
-    const matchesSearch = 
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = filterStatus === 'all' || user.kycStatus === filterStatus
-    return matchesSearch && matchesStatus
+  const [filterStatus, setFilterStatus] = useState<QueueFilter>('all')
+  const [items, setItems] = useState<AdminApplicationListItem[]>([])
+  const [totalCount, setTotalCount] = useState(0)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [counts, setCounts] = useState({
+    pending: 0,
+    approved: 0,
+    rejected: 0,
   })
 
-  const handleApprove = () => {
-    if (selectedUser) {
-      setReviewAction('approve')
-      setReviewNotes('')
-    }
-  }
+  const loadCounts = useCallback(async () => {
+    if (!token) return
+    const [submittedRes, pendingRes, approvedRes, rejectedRes] = await Promise.all([
+      fetchAdminApplications(token, { status: 'submitted', limit: 1, page: 1 }),
+      fetchAdminApplications(token, { status: 'pending_review', limit: 1, page: 1 }),
+      fetchAdminApplications(token, { status: 'approved', limit: 1, page: 1 }),
+      fetchAdminApplications(token, { status: 'rejected', limit: 1, page: 1 }),
+    ])
 
-  const handleReject = () => {
-    if (selectedUser) {
-      setReviewAction('reject')
-      setReviewNotes('')
-    }
-  }
+    setCounts({
+      pending: submittedRes.pagination.total + pendingRes.pagination.total,
+      approved: approvedRes.pagination.total,
+      rejected: rejectedRes.pagination.total,
+    })
+  }, [token])
 
-  const confirmReview = () => {
-    setSelectedUser(null)
-    setReviewAction(null)
-    setReviewNotes('')
-  }
+  const loadQueue = useCallback(async () => {
+    if (!token) return
+    setIsLoading(true)
+    setError(null)
+    try {
+      const params = {
+        page: 1,
+        limit: 50,
+        sort: '-submittedAt',
+        status: filterStatus === 'all' ? undefined : filterStatus,
+      }
+      const response = await fetchAdminApplications(token, params)
+      setItems(response.items)
+      setTotalCount(response.pagination.total)
+      await loadCounts()
+    } catch (err) {
+      const message = getAdminAuthErrorMessage(err)
+      if (message.toLowerCase().includes('authentication') || message.toLowerCase().includes('invalid')) {
+        logout()
+        return
+      }
+      setError(message)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [filterStatus, loadCounts, logout, token])
+
+  useEffect(() => {
+    loadQueue()
+  }, [loadQueue])
+
+  const filteredUsers = useMemo(() => {
+    if (!searchTerm.trim()) return items
+    const needle = searchTerm.trim().toLowerCase()
+    return items.filter((user) => {
+      return (
+        user.applicantName.toLowerCase().includes(needle) ||
+        user.email.toLowerCase().includes(needle) ||
+        user.applicationReference.toLowerCase().includes(needle)
+      )
+    })
+  }, [items, searchTerm])
 
   return (
     <div className="space-y-8">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold mb-2">User Management</h1>
-          <p className="text-muted-foreground">Review and manage user accounts</p>
+          <p className="text-muted-foreground">Review application queue and KYC statuses</p>
         </div>
+        <Button variant="outline" onClick={loadQueue} disabled={isLoading}>
+          Refresh
+        </Button>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {[
-          { icon: Clock, label: 'Pending Reviews', value: pendingKYCUsers.length, color: 'amber' },
-          { icon: CheckCircle2, label: 'Approved', value: '2,341', color: 'green' },
-          { icon: XCircle, label: 'Rejected', value: '89', color: 'red' },
+          { icon: Clock, label: 'Pending Reviews', value: counts.pending.toLocaleString(), tone: 'amber' },
+          { icon: CheckCircle2, label: 'Approved', value: counts.approved.toLocaleString(), tone: 'green' },
+          { icon: XCircle, label: 'Rejected', value: counts.rejected.toLocaleString(), tone: 'red' },
         ].map((stat) => {
           const Icon = stat.icon
           return (
@@ -88,8 +124,24 @@ export default function AdminUsersPage() {
                     <p className="text-sm text-muted-foreground">{stat.label}</p>
                     <p className="text-3xl font-bold mt-2">{stat.value}</p>
                   </div>
-                  <div className={`p-3 rounded-lg bg-${stat.color}-500/10`}>
-                    <Icon className={`h-6 w-6 text-${stat.color}-600`} />
+                  <div
+                    className={`p-3 rounded-lg ${
+                      stat.tone === 'green'
+                        ? 'bg-green-500/10'
+                        : stat.tone === 'red'
+                          ? 'bg-red-500/10'
+                          : 'bg-amber-500/10'
+                    }`}
+                  >
+                    <Icon
+                      className={`h-6 w-6 ${
+                        stat.tone === 'green'
+                          ? 'text-green-600'
+                          : stat.tone === 'red'
+                            ? 'text-red-600'
+                            : 'text-amber-600'
+                      }`}
+                    />
                   </div>
                 </div>
               </CardContent>
@@ -119,25 +171,24 @@ export default function AdminUsersPage() {
               </div>
             </div>
 
-            {/* Status Filter */}
             <div className="space-y-2">
               <Label htmlFor="status" className="text-sm">
-                KYC Status
+                Application Status
               </Label>
-              <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <Select value={filterStatus} onValueChange={(value) => setFilterStatus(value as QueueFilter)}>
                 <SelectTrigger id="status">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="submitted">Submitted</SelectItem>
+                  <SelectItem value="pending_review">Under review</SelectItem>
                   <SelectItem value="approved">Approved</SelectItem>
                   <SelectItem value="rejected">Rejected</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Reset Button */}
             <div className="flex items-end">
               <Button
                 variant="outline"
@@ -154,24 +205,30 @@ export default function AdminUsersPage() {
         </CardContent>
       </Card>
 
-      {/* Users Table */}
       <Card className="border-border">
         <CardHeader>
           <CardTitle>KYC Reviews</CardTitle>
           <CardDescription>
-            Showing {filteredUsers.length} of {pendingKYCUsers.length} pending reviews
+            Showing {filteredUsers.length} of {totalCount} applications
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {error && (
+            <div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+              {error}
+            </div>
+          )}
           <div className="space-y-0">
-            {filteredUsers.length > 0 ? (
+            {isLoading ? (
+              <p className="py-8 text-center text-sm text-muted-foreground">Loading applications...</p>
+            ) : filteredUsers.length > 0 ? (
               <div className="hidden md:block overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-border">
                       <th className="text-left py-3 px-4 font-semibold text-sm">Name</th>
+                      <th className="text-left py-3 px-4 font-semibold text-sm">Reference</th>
                       <th className="text-left py-3 px-4 font-semibold text-sm">Email</th>
-                      <th className="text-left py-3 px-4 font-semibold text-sm">Phone</th>
                       <th className="text-left py-3 px-4 font-semibold text-sm">Submitted</th>
                       <th className="text-left py-3 px-4 font-semibold text-sm">Status</th>
                       <th className="text-left py-3 px-4 font-semibold text-sm">Action</th>
@@ -183,23 +240,18 @@ export default function AdminUsersPage() {
                         key={user.id}
                         className="border-b border-border hover:bg-muted/50 transition-colors"
                       >
-                        <td className="py-4 px-4 font-medium">{user.name}</td>
+                        <td className="py-4 px-4 font-medium">{user.applicantName}</td>
+                        <td className="py-4 px-4 text-xs font-mono">{user.applicationReference}</td>
                         <td className="py-4 px-4 text-sm text-muted-foreground">{user.email}</td>
-                        <td className="py-4 px-4 text-sm">{user.phone}</td>
                         <td className="py-4 px-4 text-sm">
-                          {formatDate(user.createdAt)}
+                          {user.submittedAt ? formatDate(new Date(user.submittedAt)) : '—'}
                         </td>
                         <td className="py-4 px-4">
-                          <div className="inline-block px-3 py-1 bg-amber-500/10 text-amber-700 rounded-full text-xs font-semibold">
-                            Pending
-                          </div>
+                          <Badge>{APPLICATION_STATUS_LABELS[user.status] || user.status}</Badge>
                         </td>
                         <td className="py-4 px-4">
-                          <Button
-                            size="sm"
-                            onClick={() => setSelectedUser(user)}
-                          >
-                            Review
+                          <Button size="sm" asChild>
+                            <Link href={`/admin/applications/${user.id}`}>Review</Link>
                           </Button>
                         </td>
                       </tr>
@@ -213,7 +265,6 @@ export default function AdminUsersPage() {
               </div>
             )}
 
-            {/* Mobile View */}
             <div className="md:hidden space-y-3">
               {filteredUsers.map((user) => (
                 <div
@@ -222,23 +273,20 @@ export default function AdminUsersPage() {
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div>
-                      <p className="font-medium">{user.name}</p>
+                      <p className="font-medium">{user.applicantName}</p>
                       <p className="text-sm text-muted-foreground">{user.email}</p>
+                      <p className="text-xs font-mono text-muted-foreground mt-1">
+                        {user.applicationReference}
+                      </p>
                     </div>
-                    <div className="inline-block px-3 py-1 bg-amber-500/10 text-amber-700 rounded-full text-xs font-semibold">
-                      Pending
-                    </div>
+                    <Badge>{APPLICATION_STATUS_LABELS[user.status] || user.status}</Badge>
                   </div>
                   <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
-                    <span>{user.phone}</span>
-                    <span>{formatDate(user.createdAt)}</span>
+                    <span>{user.nationality}</span>
+                    <span>{user.submittedAt ? formatDate(new Date(user.submittedAt)) : '—'}</span>
                   </div>
-                  <Button
-                    size="sm"
-                    className="w-full"
-                    onClick={() => setSelectedUser(user)}
-                  >
-                    Review KYC
+                  <Button size="sm" className="w-full" asChild>
+                    <Link href={`/admin/applications/${user.id}`}>Review KYC</Link>
                   </Button>
                 </div>
               ))}
@@ -246,127 +294,6 @@ export default function AdminUsersPage() {
           </div>
         </CardContent>
       </Card>
-
-      {/* Review Modal */}
-      {selectedUser && !reviewAction && (
-        <Dialog open={!!selectedUser} onOpenChange={() => setSelectedUser(null)}>
-          <DialogContent className="max-w-2xl border-border">
-            <DialogHeader>
-              <DialogTitle>KYC Review</DialogTitle>
-              <DialogDescription>
-                Review documents and approve/reject the application
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-6 py-4">
-              {/* User Info */}
-              <div className="space-y-4 p-4 bg-muted rounded-lg">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-1">Name</p>
-                    <p className="font-semibold">{selectedUser.name}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-1">Email</p>
-                    <p className="font-semibold text-sm">{selectedUser.email}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-1">Phone</p>
-                    <p className="font-semibold">{selectedUser.phone}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-1">Submitted</p>
-                    <p className="font-semibold">{formatDate(selectedUser.createdAt)}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Documents */}
-              <div className="space-y-3">
-                <h4 className="font-semibold text-sm">Documents Submitted</h4>
-                <div className="space-y-2">
-                  {['Passport', 'Proof of Address'].map((doc) => (
-                    <div key={doc} className="p-3 border border-border rounded-lg flex items-center justify-between">
-                      <span className="text-sm">{doc}</span>
-                      <CheckCircle2 className="h-5 w-5 text-green-600" />
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Decision */}
-              <div className="space-y-3">
-                <h4 className="font-semibold text-sm">Decision</h4>
-                <div className="grid grid-cols-2 gap-3">
-                  <Button
-                    variant="outline"
-                    className="border-green-200 hover:bg-green-50 dark:border-green-900 dark:hover:bg-green-950/30"
-                    onClick={handleApprove}
-                  >
-                    <CheckCircle2 className="h-4 w-4 mr-2" />
-                    Approve
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="border-red-200 hover:bg-red-50 dark:border-red-900 dark:hover:bg-red-950/30"
-                    onClick={handleReject}
-                  >
-                    <XCircle className="h-4 w-4 mr-2" />
-                    Reject
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
-
-      {/* Approve/Reject Modal */}
-      {reviewAction && selectedUser && (
-        <Dialog open={!!reviewAction} onOpenChange={() => setReviewAction(null)}>
-          <DialogContent className="border-border">
-            <DialogHeader>
-              <DialogTitle>
-                {reviewAction === 'approve' ? 'Approve Application' : 'Reject Application'}
-              </DialogTitle>
-              <DialogDescription>
-                {selectedUser.name}
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="notes">
-                  {reviewAction === 'approve' ? 'Approval Notes' : 'Rejection Reason'}
-                </Label>
-                <Textarea
-                  id="notes"
-                  placeholder={
-                    reviewAction === 'approve'
-                      ? 'Add any notes (optional)...'
-                      : 'Explain why the application is being rejected...'
-                  }
-                  value={reviewNotes}
-                  onChange={(e) => setReviewNotes(e.target.value)}
-                  rows={4}
-                />
-              </div>
-            </div>
-
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setReviewAction(null)}>
-                Cancel
-              </Button>
-              <Button
-                onClick={confirmReview}
-                variant={reviewAction === 'approve' ? 'default' : 'destructive'}
-              >
-                {reviewAction === 'approve' ? 'Approve' : 'Reject'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
     </div>
   )
 }

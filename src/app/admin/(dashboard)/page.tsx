@@ -1,80 +1,136 @@
+'use client'
+
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
+import { AlertCircle, FileCheck, RefreshCw, Users } from 'lucide-react'
+import { useAdminAuth } from '@/components/admin/AdminAuthProvider'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Users, FileCheck, TrendingUp, AlertCircle } from 'lucide-react'
-import Link from 'next/link'
-import { pendingKYCUsers, accounts, transactions } from '@/lib/mock-data'
-import { formatCurrency, formatDate } from '@/lib/utils'
+import { fetchAdminApplications } from '@/lib/admin/applications/api'
+import type { AdminApplicationListItem } from '@/lib/admin/applications/types'
+import { getAdminAuthErrorMessage } from '@/lib/admin/errors'
+import { APPLICATION_STATUS_LABELS } from '@/lib/application/statusLabels'
+import { formatDate } from '@/lib/utils'
+
+function statusBadgeVariant(status: string): 'default' | 'secondary' | 'destructive' | 'outline' {
+  if (status === 'submitted' || status === 'pending_review') return 'default'
+  if (status === 'need_more_info') return 'secondary'
+  if (status === 'rejected') return 'destructive'
+  return 'outline'
+}
+
+type DashboardStats = {
+  pendingReviews: number
+  approvedApplications: number
+  rejectedApplications: number
+}
 
 export default function AdminDashboardPage() {
-  const totalUsers = 2450 + pendingKYCUsers.length
-  const pendingKYCCount = pendingKYCUsers.length
-  const totalTransactions = transactions.length
-  const totalVolume = transactions.reduce((sum, txn) => sum + txn.amount, 0)
+  const { token, logout } = useAdminAuth()
+  const [stats, setStats] = useState<DashboardStats>({
+    pendingReviews: 0,
+    approvedApplications: 0,
+    rejectedApplications: 0,
+  })
+  const [pendingItems, setPendingItems] = useState<AdminApplicationListItem[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const stats = [
-    {
-      icon: Users,
-      title: 'Total Users',
-      value: totalUsers.toLocaleString(),
-      change: '+12% this month',
-    },
-    {
-      icon: FileCheck,
-      title: 'Pending KYC',
-      value: pendingKYCCount,
-      change: 'Requires review',
-      highlight: true,
-    },
-    {
-      icon: TrendingUp,
-      title: 'Total Volume',
-      value: formatCurrency(totalVolume),
-      change: 'This month',
-    },
-    {
-      icon: AlertCircle,
-      title: 'Flagged Accounts',
-      value: '3',
-      change: 'Under review',
-    },
-  ]
+  const loadDashboardData = useCallback(async () => {
+    if (!token) return
+
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      const [pendingReviewRes, submittedRes, approvedRes, rejectedRes] = await Promise.all([
+        fetchAdminApplications(token, { status: 'pending_review', page: 1, limit: 5, sort: '-submittedAt' }),
+        fetchAdminApplications(token, { status: 'submitted', page: 1, limit: 1, sort: '-submittedAt' }),
+        fetchAdminApplications(token, { status: 'approved', page: 1, limit: 1, sort: '-submittedAt' }),
+        fetchAdminApplications(token, { status: 'rejected', page: 1, limit: 1, sort: '-submittedAt' }),
+      ])
+
+      setPendingItems(pendingReviewRes.items)
+      setStats({
+        pendingReviews: pendingReviewRes.pagination.total + submittedRes.pagination.total,
+        approvedApplications: approvedRes.pagination.total,
+        rejectedApplications: rejectedRes.pagination.total,
+      })
+    } catch (err) {
+      const message = getAdminAuthErrorMessage(err)
+      if (message.toLowerCase().includes('authentication') || message.toLowerCase().includes('invalid')) {
+        logout()
+        return
+      }
+      setError(message)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [logout, token])
+
+  useEffect(() => {
+    loadDashboardData()
+  }, [loadDashboardData])
+
+  const statCards = useMemo(
+    () => [
+      {
+        icon: Users,
+        title: 'Approved Applications',
+        value: stats.approvedApplications.toLocaleString(),
+        helper: 'Ready for account activation',
+      },
+      {
+        icon: FileCheck,
+        title: 'Pending KYC',
+        value: stats.pendingReviews.toLocaleString(),
+        helper: 'Requires review',
+        highlight: true,
+      },
+      {
+        icon: AlertCircle,
+        title: 'Rejected Applications',
+        value: stats.rejectedApplications.toLocaleString(),
+        helper: 'Needs follow-up or resubmission',
+      },
+    ],
+    [stats]
+  )
 
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
-        <p className="text-muted-foreground">Monitor platform activity and manage users</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="mb-2 text-3xl font-bold">Admin Dashboard</h1>
+          <p className="text-muted-foreground">Monitor application activity and review queue</p>
+        </div>
+        <Button variant="outline" onClick={loadDashboardData} disabled={isLoading}>
+          <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat) => {
+      {error && (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+          {error}
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+        {statCards.map((stat) => {
           const Icon = stat.icon
           return (
-            <Card
-              key={stat.title}
-              className={`border-border ${
-                stat.highlight ? 'ring-2 ring-amber-400' : ''
-              }`}
-            >
+            <Card key={stat.title} className={`border-border ${stat.highlight ? 'ring-2 ring-amber-400' : ''}`}>
               <CardContent className="pt-6">
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground mb-1">{stat.title}</p>
-                    <p className="text-2xl font-bold">{stat.value}</p>
-                    <p className="text-xs text-muted-foreground mt-2">{stat.change}</p>
+                    <p className="mb-1 text-sm text-muted-foreground">{stat.title}</p>
+                    <p className="text-2xl font-bold">{isLoading ? '—' : stat.value}</p>
+                    <p className="mt-2 text-xs text-muted-foreground">{stat.helper}</p>
                   </div>
-                  <div className={`p-3 rounded-lg ${
-                    stat.highlight
-                      ? 'bg-amber-500/10'
-                      : 'bg-primary/10'
-                  }`}>
-                    <Icon className={`h-6 w-6 ${
-                      stat.highlight
-                        ? 'text-amber-600'
-                        : 'text-primary'
-                    }`} />
+                  <div className={`rounded-lg p-3 ${stat.highlight ? 'bg-amber-500/10' : 'bg-primary/10'}`}>
+                    <Icon className={`h-6 w-6 ${stat.highlight ? 'text-amber-600' : 'text-primary'}`} />
                   </div>
                 </div>
               </CardContent>
@@ -83,137 +139,86 @@ export default function AdminDashboardPage() {
         })}
       </div>
 
-      {/* Main Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Pending KYC Review */}
-        <div className="lg:col-span-2 space-y-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="space-y-6 lg:col-span-2">
           <Card className="border-border">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle>Pending KYC Reviews</CardTitle>
-                <CardDescription>Users awaiting verification</CardDescription>
+                <CardDescription>Applications awaiting verification</CardDescription>
               </div>
               <Button size="sm" asChild>
-                <Link href="/admin/users">View All</Link>
+                <Link href="/admin/applications">View All</Link>
               </Button>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {pendingKYCUsers.slice(0, 5).map((user) => (
-                  <div
-                    key={user.id}
-                    className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center font-bold text-sm text-primary">
-                        {user.name.charAt(0)}
-                      </div>
+              {isLoading ? (
+                <p className="py-6 text-sm text-muted-foreground">Loading applications...</p>
+              ) : pendingItems.length === 0 ? (
+                <p className="py-6 text-sm text-muted-foreground">No applications currently awaiting review.</p>
+              ) : (
+                <div className="space-y-4">
+                  {pendingItems.map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex items-center justify-between rounded-lg border border-border p-4 transition-colors hover:bg-muted/50"
+                    >
                       <div>
-                        <p className="font-medium">{user.name}</p>
-                        <p className="text-sm text-muted-foreground">{user.email}</p>
+                        <p className="font-medium">{item.applicantName}</p>
+                        <p className="text-sm text-muted-foreground">{item.email}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Submitted {item.submittedAt ? formatDate(new Date(item.submittedAt)) : '—'}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Badge variant={statusBadgeVariant(item.status)}>
+                          {APPLICATION_STATUS_LABELS[item.status] || item.status}
+                        </Badge>
+                        <Button size="sm" variant="outline" asChild>
+                          <Link href={`/admin/applications/${item.id}`}>Review</Link>
+                        </Button>
                       </div>
                     </div>
-                    <Button size="sm" asChild>
-                      <Link href="/admin/users">Review</Link>
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Recent Transactions */}
-          <Card className="border-border">
-            <CardHeader>
-              <CardTitle>Recent Transactions</CardTitle>
-              <CardDescription>High-value transactions</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {transactions.slice(0, 5).map((txn) => (
-                  <div
-                    key={txn.id}
-                    className="flex items-center justify-between p-3 border border-border rounded-lg"
-                  >
-                    <div>
-                      <p className="font-medium text-sm">{txn.description}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatDate(txn.date)}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold text-sm">{formatCurrency(txn.amount)}</p>
-                      <p className="text-xs text-muted-foreground capitalize">
-                        {txn.status}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
 
-        {/* Sidebar */}
         <div className="space-y-6">
-          {/* Quick Actions */}
           <Card className="border-border">
             <CardHeader>
               <CardTitle>Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               <Button variant="outline" className="w-full justify-start" asChild>
-                <Link href="/admin/users">Manage Users</Link>
+                <Link href="/admin/applications">Manage Applications</Link>
               </Button>
-              <Button variant="outline" className="w-full justify-start">
-                View Transactions
-              </Button>
-              <Button variant="outline" className="w-full justify-start">
-                Generate Report
-              </Button>
-              <Button variant="outline" className="w-full justify-start">
-                System Settings
+              <Button variant="outline" className="w-full justify-start" asChild>
+                <Link href="/admin/users">Review Queue</Link>
               </Button>
             </CardContent>
           </Card>
 
-          {/* System Status */}
           <Card className="border-border">
             <CardHeader>
               <CardTitle className="text-lg">System Status</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {[
-                { name: 'API Server', status: 'Healthy' },
-                { name: 'Database', status: 'Healthy' },
-                { name: 'Authentication', status: 'Healthy' },
-                { name: 'Payment Gateway', status: 'Healthy' },
+                { name: 'Admin API', status: 'Connected' },
+                { name: 'Authentication', status: 'Connected' },
+                { name: 'Application Queue', status: 'Connected' },
               ].map((service) => (
                 <div key={service.name} className="flex items-center justify-between">
                   <p className="text-sm">{service.name}</p>
                   <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 bg-green-600 rounded-full" />
+                    <span className="h-2 w-2 rounded-full bg-green-600" />
                     <span className="text-xs text-muted-foreground">{service.status}</span>
                   </div>
                 </div>
               ))}
-            </CardContent>
-          </Card>
-
-          {/* Alert */}
-          <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900">
-            <CardContent className="pt-6">
-              <div className="flex gap-3">
-                <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0" />
-                <div>
-                  <p className="font-semibold text-sm text-amber-950 dark:text-amber-100 mb-1">
-                    High Activity Alert
-                  </p>
-                  <p className="text-xs text-amber-900/70 dark:text-amber-200/70">
-                    Unusual transaction volume detected in Asia-Pacific region
-                  </p>
-                </div>
-              </div>
             </CardContent>
           </Card>
         </div>

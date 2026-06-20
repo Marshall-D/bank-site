@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, LogOut, Settings, Users } from 'lucide-react'
+import { FileCheck, LayoutDashboard, LogOut, Settings } from 'lucide-react'
 
 import { Logo } from '@/components/brand/Logo'
 import { Button } from '@/components/ui/button'
@@ -16,11 +16,12 @@ export function AdminSidebar() {
 
   const navItems = [
     { href: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
-    { href: '/admin/users', icon: Users, label: 'User Management' },
+    { href: '/admin/applications', icon: FileCheck, label: 'Applications' },
     { href: '/admin/settings', icon: Settings, label: 'Settings' },
   ]
 
-  const isActive = (href: string) => pathname === href
+  const isActive = (href: string) =>
+    href === '/admin' ? pathname === href : pathname.startsWith(href)
 
   return (
     <>

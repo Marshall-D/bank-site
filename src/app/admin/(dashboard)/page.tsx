@@ -46,12 +46,24 @@ export default function AdminDashboardPage() {
     try {
       const [pendingReviewRes, submittedRes, approvedRes, rejectedRes] = await Promise.all([
         fetchAdminApplications(token, { status: 'pending_review', page: 1, limit: 5, sort: '-submittedAt' }),
-        fetchAdminApplications(token, { status: 'submitted', page: 1, limit: 1, sort: '-submittedAt' }),
+        fetchAdminApplications(token, { status: 'submitted', page: 1, limit: 5, sort: '-submittedAt' }),
         fetchAdminApplications(token, { status: 'approved', page: 1, limit: 1, sort: '-submittedAt' }),
         fetchAdminApplications(token, { status: 'rejected', page: 1, limit: 1, sort: '-submittedAt' }),
       ])
 
-      setPendingItems(pendingReviewRes.items)
+      const pendingById = new Map<string, AdminApplicationListItem>()
+      for (const item of [...submittedRes.items, ...pendingReviewRes.items]) {
+        pendingById.set(item.id, item)
+      }
+      const mergedPending = [...pendingById.values()]
+        .sort((a, b) => {
+          const aTime = a.submittedAt ? new Date(a.submittedAt).getTime() : 0
+          const bTime = b.submittedAt ? new Date(b.submittedAt).getTime() : 0
+          return bTime - aTime
+        })
+        .slice(0, 5)
+
+      setPendingItems(mergedPending)
       setStats({
         pendingReviews: pendingReviewRes.pagination.total + submittedRes.pagination.total,
         approvedApplications: approvedRes.pagination.total,

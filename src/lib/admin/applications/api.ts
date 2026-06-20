@@ -2,7 +2,7 @@ import { API_BASE_URL } from '@/lib/api'
 import { AdminAuthError } from '@/lib/admin/errors'
 import { authHeaders } from '@/lib/admin/api'
 import type {
-  AdminApplicationDetailResponse,
+  AdminApplicationDetail,
   ApiErrorResponse,
   ApiSuccessResponse,
   ListApplicationsParams,
@@ -51,14 +51,14 @@ export async function fetchAdminApplications(
 export async function fetchAdminApplicationById(
   token: string,
   id: string
-): Promise<AdminApplicationDetailResponse> {
+): Promise<AdminApplicationDetail> {
   const response = await fetch(`${API_BASE_URL}/api/v1/admin/applications/${id}`, {
     headers: authHeaders(token),
     cache: 'no-store',
   })
 
   const data = (await response.json()) as
-    | ApiSuccessResponse<AdminApplicationDetailResponse>
+    | ApiSuccessResponse<AdminApplicationDetail>
     | ApiErrorResponse
 
   if (!response.ok || !data.success) {

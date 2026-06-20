@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { FileCheck, LayoutDashboard, LogOut, Settings } from 'lucide-react'
+import { FileCheck, LayoutDashboard, LogOut, Settings, Users } from 'lucide-react'
 
 import { Logo } from '@/components/brand/Logo'
 import { Button } from '@/components/ui/button'
@@ -17,6 +17,7 @@ export function AdminSidebar() {
   const navItems = [
     { href: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
     { href: '/admin/applications', icon: FileCheck, label: 'Applications' },
+    { href: '/admin/users', icon: Users, label: 'Users' },
     { href: '/admin/settings', icon: Settings, label: 'Settings' },
   ]
 

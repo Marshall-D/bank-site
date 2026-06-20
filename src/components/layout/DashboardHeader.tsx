@@ -22,9 +22,10 @@ export function DashboardHeader() {
   const pathname = usePathname()
   const { isOpen, toggle } = useDashboardNav()
   const adminAuth = useOptionalAdminAuth()
-  const isAdmin = pathname.startsWith('/admin')
-  const logoHref = isAdmin ? '/admin' : '/dashboard'
-  const displayUser = isAdmin && adminAuth?.user ? adminAuth.user : currentUser
+  const isAdminPortal =
+    pathname.startsWith('/admin') && !pathname.startsWith('/admin/login')
+  const logoHref = isAdminPortal ? '/admin' : '/dashboard'
+  const displayUser = isAdminPortal && adminAuth?.user ? adminAuth.user : currentUser
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -73,22 +74,33 @@ export function DashboardHeader() {
                 <p className="text-xs text-muted-foreground">{displayUser.email}</p>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link href="/settings" className="flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  <span>Profile</span>
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/settings" className="flex items-center gap-2">
-                  <Settings className="h-4 w-4" />
-                  <span>Settings</span>
-                </Link>
-              </DropdownMenuItem>
+              {isAdminPortal ? (
+                <DropdownMenuItem asChild>
+                  <Link href="/admin/settings" className="flex items-center gap-2">
+                    <Settings className="h-4 w-4" />
+                    <span>Settings</span>
+                  </Link>
+                </DropdownMenuItem>
+              ) : (
+                <>
+                  <DropdownMenuItem asChild>
+                    <Link href="/settings" className="flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      <span>Profile</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/settings" className="flex items-center gap-2">
+                      <Settings className="h-4 w-4" />
+                      <span>Settings</span>
+                    </Link>
+                  </DropdownMenuItem>
+                </>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={() => {
-                  if (isAdmin && adminAuth?.logout) {
+                  if (isAdminPortal && adminAuth?.logout) {
                     adminAuth.logout()
                   }
                 }}

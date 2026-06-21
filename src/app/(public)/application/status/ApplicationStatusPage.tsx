@@ -125,6 +125,15 @@ export default function ApplicationStatusPage() {
                     <p className="text-sm">{result.needMoreInfoNotes}</p>
                   </div>
                 )}
+                {result.nextStep === 'set_credentials' && (
+                  <Button className="w-full" asChild>
+                    <Link
+                      href={`/activate?email=${encodeURIComponent(email.trim().toLowerCase())}`}
+                    >
+                      Set up online banking password
+                    </Link>
+                  </Button>
+                )}
               </div>
             )}
 

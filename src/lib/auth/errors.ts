@@ -18,6 +18,9 @@ export function getCustomerAuthErrorMessage(error: unknown): string {
     if (error.code === 'ALREADY_ACTIVATED') {
       return 'This account has already been activated. You can sign in instead.'
     }
+    if (error.code === 'INVALID_CREDENTIALS' || error.code === 'UNAUTHORIZED') {
+      return 'Invalid email or password.'
+    }
     if (error.code === 'RATE_LIMITED') {
       return 'Too many attempts. Please wait a few minutes and try again.'
     }

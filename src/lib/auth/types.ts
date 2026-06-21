@@ -5,11 +5,20 @@ export type CustomerUser = {
   role: 'customer' | 'admin'
 }
 
+export type LoginPayload = {
+  email: string
+  password: string
+}
+
 export type ActivatePayload = {
   activationToken: string
   email: string
   password: string
   confirmPassword: string
+}
+
+export type CustomerMeResponse = {
+  user: CustomerUser
 }
 
 export type AuthResponse = {

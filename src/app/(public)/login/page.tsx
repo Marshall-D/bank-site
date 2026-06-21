@@ -1,44 +1,58 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { Eye, EyeOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
-import { Checkbox } from '@/components/ui/checkbox'
 import { Logo } from '@/components/brand/Logo'
 import { BRAND_NAME } from '@/lib/brand'
-import { Eye, EyeOff } from 'lucide-react'
+import { CustomerAuthProvider, useCustomerAuth } from '@/components/customer/CustomerAuthProvider'
+import { getCustomerAuthErrorMessage } from '@/lib/auth/errors'
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter()
+  const { login, user, isLoading: authLoading } = useCustomerAuth()
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [formData, setFormData] = useState({
-    email: 'sarah.johnson@example.com',
-    password: 'password123',
-    rememberMe: true,
+    email: '',
+    password: '',
   })
 
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.replace('/dashboard')
+    }
+  }, [authLoading, user, router])
+
+  if (!authLoading && user) {
+    return null
+  }
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }))
+    const { name, value } = e.target
+    setFormData((prev) => ({ ...prev, [name]: value }))
+    setError(null)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    // Mock successful login - redirect to dashboard
-    router.push('/dashboard')
+    setError(null)
+
+    try {
+      await login(formData.email, formData.password)
+      router.replace('/dashboard')
+    } catch (err) {
+      setError(getCustomerAuthErrorMessage(err))
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -53,7 +67,6 @@ export default function LoginPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Email */}
             <div className="space-y-2">
               <Label htmlFor="email">Email address</Label>
               <Input
@@ -64,18 +77,15 @@ export default function LoginPage() {
                 value={formData.email}
                 onChange={handleChange}
                 required
-                disabled={isLoading}
+                disabled={isLoading || authLoading}
+                autoComplete="username"
               />
             </div>
 
-            {/* Password */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Password</Label>
-                <Link
-                  href="/forgot-password"
-                  className="text-sm text-primary hover:underline"
-                >
+                <Link href="/forgot-password" className="text-sm text-primary hover:underline">
                   Forgot?
                 </Link>
               </div>
@@ -88,50 +98,35 @@ export default function LoginPage() {
                   value={formData.password}
                   onChange={handleChange}
                   required
-                  disabled={isLoading}
+                  disabled={isLoading || authLoading}
+                  autoComplete="current-password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
             </div>
 
-            {/* Remember Me */}
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="rememberMe"
-                name="rememberMe"
-                checked={formData.rememberMe}
-                onCheckedChange={(checked) =>
-                  setFormData(prev => ({ ...prev, rememberMe: checked as boolean }))
-                }
-                disabled={isLoading}
-              />
-              <Label htmlFor="rememberMe" className="font-normal cursor-pointer">
-                Remember me
-              </Label>
-            </div>
+            {error && (
+              <p className="text-sm text-destructive" role="alert">
+                {error}
+              </p>
+            )}
 
-            {/* Submit Button */}
             <Button
               type="submit"
               className="w-full"
-              disabled={isLoading}
+              disabled={isLoading || authLoading}
               size="lg"
             >
               {isLoading ? 'Signing in...' : 'Sign in'}
             </Button>
           </form>
 
-          {/* Divider */}
           <div className="my-6 relative">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-border" />
@@ -143,19 +138,30 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Sign Up Link */}
           <Button variant="outline" className="w-full" asChild>
             <Link href="/register">Apply for an account</Link>
           </Button>
 
-          {/* Demo Notice */}
-          <div className="mt-6 p-4 bg-muted rounded-lg border border-border">
-            <p className="text-xs text-muted-foreground">
-              <strong>Demo:</strong> Pre-filled with test credentials. Click "Sign in" to proceed to dashboard.
-            </p>
+          <div className="mt-6 text-center">
+            <Link
+              href="/application/status"
+              className="text-sm text-muted-foreground hover:text-foreground"
+            >
+              Check application status
+            </Link>
           </div>
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen" />}>
+      <CustomerAuthProvider>
+        <LoginForm />
+      </CustomerAuthProvider>
+    </Suspense>
   )
 }

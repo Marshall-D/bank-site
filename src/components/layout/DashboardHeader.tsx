@@ -16,16 +16,20 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useDashboardNav } from '@/components/layout/dashboard-nav'
 import { useOptionalAdminAuth } from '@/components/admin/AdminAuthProvider'
-import { currentUser } from '@/lib/mock-data'
+import { useOptionalCustomerAuth } from '@/components/customer/CustomerAuthProvider'
 
 export function DashboardHeader() {
   const pathname = usePathname()
   const { isOpen, toggle } = useDashboardNav()
   const adminAuth = useOptionalAdminAuth()
+  const customerAuth = useOptionalCustomerAuth()
   const isAdminPortal =
     pathname.startsWith('/admin') && !pathname.startsWith('/admin/login')
   const logoHref = isAdminPortal ? '/admin' : '/dashboard'
-  const displayUser = isAdminPortal && adminAuth?.user ? adminAuth.user : currentUser
+  const displayUser =
+    isAdminPortal && adminAuth?.user
+      ? adminAuth.user
+      : customerAuth?.user ?? { name: 'Customer', email: '' }
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -102,6 +106,8 @@ export function DashboardHeader() {
                 onClick={() => {
                   if (isAdminPortal && adminAuth?.logout) {
                     adminAuth.logout()
+                  } else if (!isAdminPortal && customerAuth?.logout) {
+                    customerAuth.logout()
                   }
                 }}
               >

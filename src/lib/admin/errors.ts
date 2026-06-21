@@ -18,6 +18,15 @@ export function getAdminAuthErrorMessage(error: unknown): string {
     if (error.code === 'UNAUTHORIZED') {
       return 'Invalid email or password.'
     }
+    if (error.code === 'INVALID_STATUS_TRANSITION') {
+      return 'This application can no longer be reviewed in its current status.'
+    }
+    if (error.code === 'CUSTOMER_ALREADY_EXISTS') {
+      return 'A customer account already exists for this email.'
+    }
+    if (error.code === 'APPLICATION_ALREADY_PROVISIONED') {
+      return 'This application has already been provisioned.'
+    }
     return error.message
   }
 

@@ -7,6 +7,8 @@ import type {
   ApiSuccessResponse,
   ListApplicationsParams,
   PaginatedApplicationsResponse,
+  ReviewApplicationPayload,
+  ReviewApplicationResponse,
 } from './types'
 
 function buildSearchParams(params: ListApplicationsParams): URLSearchParams {
@@ -59,6 +61,31 @@ export async function fetchAdminApplicationById(
 
   const data = (await response.json()) as
     | ApiSuccessResponse<AdminApplicationDetail>
+    | ApiErrorResponse
+
+  if (!response.ok || !data.success) {
+    throw new AdminAuthError(data as ApiErrorResponse)
+  }
+
+  return data.data
+}
+
+export async function reviewAdminApplication(
+  token: string,
+  id: string,
+  payload: ReviewApplicationPayload
+): Promise<ReviewApplicationResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/admin/applications/${id}/review`, {
+    method: 'PATCH',
+    headers: {
+      ...authHeaders(token),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  })
+
+  const data = (await response.json()) as
+    | ApiSuccessResponse<ReviewApplicationResponse>
     | ApiErrorResponse
 
   if (!response.ok || !data.success) {

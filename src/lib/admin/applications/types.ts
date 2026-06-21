@@ -28,6 +28,54 @@ export type ReviewedBy = {
   email?: string
 }
 
+export type ProvisionedCustomer = {
+  userId: string
+  email: string
+  isActive: boolean
+  activatedAt: string | null
+}
+
+export type ProvisionedAccount = {
+  id: string
+  accountNumberMasked: string
+  accountType: string
+  balance: number
+  currency: string
+  status: string
+  openedAt: string
+}
+
+export type ActivationSummary = {
+  expiresAt: string
+  usedAt: string | null
+}
+
+export type ReviewAction = 'approve' | 'reject' | 'request_more_info'
+
+export type ReviewApplicationPayload = {
+  action: ReviewAction
+  notes?: string
+}
+
+export type ReviewApplicationResponse = {
+  id: string
+  applicationReference: string
+  status: string
+  previousStatus: string
+  action: ReviewAction
+  reviewNotes: string | null
+  reviewedAt: string | null
+  reviewedBy?: ReviewedBy | null
+  userId: string | null
+  nextStep: string
+  customer?: ProvisionedCustomer
+  account?: ProvisionedAccount
+  activation?: {
+    expiresAt: string
+    emailSent: boolean
+  }
+}
+
 export type AdminApplicationListItem = {
   id: string
   applicationReference: string
@@ -107,6 +155,9 @@ export type AdminApplicationDetail = AdminApplicationListItem & {
   activatedAt: string | null
   applicationDate: string | null
   updatedAt: string
+  customer?: ProvisionedCustomer | null
+  account?: ProvisionedAccount | null
+  activation?: ActivationSummary | null
 }
 
 /** @deprecated Use AdminApplicationDetail */

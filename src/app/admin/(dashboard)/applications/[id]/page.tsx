@@ -5,10 +5,12 @@ import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { useAdminAuth } from '@/components/admin/AdminAuthProvider'
 import { ApplicationDocumentCard } from '@/components/admin/ApplicationDocumentCard'
+import { ApplicationReviewDialog } from '@/components/admin/ApplicationReviewDialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { fetchAdminApplicationById } from '@/lib/admin/applications/api'
+import { toast } from '@/hooks/use-toast'
+import { fetchAdminApplicationById, reviewAdminApplication } from '@/lib/admin/applications/api'
 import {
   formatAccountType,
   formatAddress,
@@ -19,7 +21,7 @@ import {
   formatProofOfAddressType,
   formatSourceOfFundsType,
 } from '@/lib/admin/applications/formatters'
-import type { AdminApplicationDetail } from '@/lib/admin/applications/types'
+import type { AdminApplicationDetail, ReviewAction } from '@/lib/admin/applications/types'
 import { getAdminAuthErrorMessage } from '@/lib/admin/errors'
 import { APPLICATION_STATUS_LABELS } from '@/lib/application/statusLabels'
 import { formatDate, formatDateLong } from '@/lib/utils'
@@ -48,12 +50,18 @@ function statusBadgeVariant(status: string): 'default' | 'secondary' | 'destruct
   return 'outline'
 }
 
+function isReviewableStatus(status: string) {
+  return status === 'submitted' || status === 'pending_review'
+}
+
 export default function AdminApplicationDetailPage() {
   const params = useParams<{ id: string }>()
   const { token, logout } = useAdminAuth()
   const [item, setItem] = useState<AdminApplicationDetail | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [reviewAction, setReviewAction] = useState<ReviewAction | null>(null)
+  const [isReviewing, setIsReviewing] = useState(false)
 
   const applicationId = params?.id
 
@@ -83,6 +91,40 @@ export default function AdminApplicationDetailPage() {
   useEffect(() => {
     loadApplication()
   }, [loadApplication])
+
+  const handleReviewConfirm = async (notes: string) => {
+    if (!token || !applicationId || !reviewAction) return
+
+    setIsReviewing(true)
+    try {
+      const result = await reviewAdminApplication(token, applicationId, {
+        action: reviewAction,
+        ...(notes ? { notes } : {}),
+      })
+
+      if (reviewAction === 'approve' && result.account) {
+        toast({
+          title: 'Application approved',
+          description: `Customer account ${result.account.accountNumberMasked} created. Activation invite logged (email stub).`,
+        })
+      } else if (reviewAction === 'reject') {
+        toast({ title: 'Application rejected' })
+      } else {
+        toast({ title: 'More information requested' })
+      }
+
+      setReviewAction(null)
+      await loadApplication()
+    } catch (err) {
+      toast({
+        title: 'Review action failed',
+        description: getAdminAuthErrorMessage(err),
+        variant: 'destructive',
+      })
+    } finally {
+      setIsReviewing(false)
+    }
+  }
 
   if (isLoading) {
     return (
@@ -131,14 +173,87 @@ export default function AdminApplicationDetailPage() {
           <Button asChild variant="outline">
             <Link href="/admin/applications">Back to applications</Link>
           </Button>
-          <Button disabled title="Available in ticket 010">
-            Approve
-          </Button>
-          <Button disabled variant="destructive" title="Available in ticket 010">
-            Reject
-          </Button>
+          {isReviewableStatus(item.status) && (
+            <>
+              <Button onClick={() => setReviewAction('approve')} disabled={isReviewing}>
+                Approve
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setReviewAction('request_more_info')}
+                disabled={isReviewing}
+              >
+                Request info
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => setReviewAction('reject')}
+                disabled={isReviewing}
+              >
+                Reject
+              </Button>
+            </>
+          )}
         </div>
       </div>
+
+      {item.account && (
+        <Card className="border-border">
+          <CardHeader>
+            <CardTitle>Provisioned account</CardTitle>
+            <CardDescription>
+              Customer record and bank account created on approval
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <DetailField
+              label="Account number"
+              value={item.account.accountNumberMasked}
+              mono
+            />
+            <DetailField
+              label="Account type"
+              value={formatAccountType(item.account.accountType)}
+            />
+            <DetailField
+              label="Balance"
+              value={formatCurrencyAmount(item.account.balance, item.account.currency)}
+            />
+            <DetailField label="Account status" value={item.account.status} />
+            {item.customer && (
+              <>
+                <DetailField label="Customer email" value={item.customer.email} />
+                <DetailField
+                  label="Customer active"
+                  value={item.customer.isActive ? 'Yes' : 'No'}
+                />
+              </>
+            )}
+            {item.activation && (
+              <DetailField
+                label="Activation expires"
+                value={formatDateLong(new Date(item.activation.expiresAt))}
+              />
+            )}
+          </CardContent>
+          <CardContent className="pt-0">
+            <p className="text-xs text-muted-foreground">
+              Activation email is stubbed until the email service is connected. Tokens are never
+              shown in the admin portal.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      <ApplicationReviewDialog
+        action={reviewAction}
+        open={reviewAction !== null}
+        onOpenChange={(open) => {
+          if (!open) setReviewAction(null)
+        }}
+        onConfirm={handleReviewConfirm}
+        isLoading={isReviewing}
+      />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card className="border-border">

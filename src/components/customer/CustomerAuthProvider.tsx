@@ -12,10 +12,17 @@ import { useRouter } from 'next/navigation'
 import { fetchCustomerMe, loginCustomer, logoutCustomerSession, revokeCustomerSession } from '@/lib/auth/api'
 import { tryRefreshCustomerSession } from '@/lib/auth/session'
 import { clearCustomerTokens, getCustomerRefreshToken, getCustomerToken, setCustomerTokens } from '@/lib/auth/storage'
-import type { CustomerUser } from '@/lib/auth/types'
+import type {
+  CustomerAccountSummary,
+  CustomerApplicationSummary,
+  CustomerMeResponse,
+  CustomerUser,
+} from '@/lib/auth/types'
 
 type CustomerAuthContextValue = {
   user: CustomerUser | null
+  application: CustomerApplicationSummary | null
+  accounts: CustomerAccountSummary[]
   token: string | null
   isLoading: boolean
   login: (email: string, password: string) => Promise<void>
@@ -24,9 +31,13 @@ type CustomerAuthContextValue = {
 
 const CustomerAuthContext = createContext<CustomerAuthContextValue | null>(null)
 
+async function loadCustomerMe(accessToken: string): Promise<CustomerMeResponse> {
+  return fetchCustomerMe(accessToken)
+}
+
 async function bootstrapCustomerSession(): Promise<{
   token: string
-  user: CustomerUser
+  me: CustomerMeResponse
 } | null> {
   let accessToken = getCustomerToken()
   if (!accessToken) {
@@ -34,8 +45,8 @@ async function bootstrapCustomerSession(): Promise<{
   }
 
   try {
-    const { user } = await fetchCustomerMe(accessToken)
-    return { token: accessToken, user }
+    const me = await loadCustomerMe(accessToken)
+    return { token: accessToken, me }
   } catch {
     const refreshedToken = await tryRefreshCustomerSession()
     if (!refreshedToken) {
@@ -44,14 +55,27 @@ async function bootstrapCustomerSession(): Promise<{
     }
 
     accessToken = refreshedToken
-    const { user } = await fetchCustomerMe(accessToken)
-    return { token: accessToken, user }
+    const me = await loadCustomerMe(accessToken)
+    return { token: accessToken, me }
   }
+}
+
+function applyMeState(
+  me: CustomerMeResponse,
+  setUser: (user: CustomerUser) => void,
+  setApplication: (application: CustomerApplicationSummary | null) => void,
+  setAccounts: (accounts: CustomerAccountSummary[]) => void
+) {
+  setUser(me.user)
+  setApplication(me.application)
+  setAccounts(me.accounts)
 }
 
 export function CustomerAuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const [user, setUser] = useState<CustomerUser | null>(null)
+  const [application, setApplication] = useState<CustomerApplicationSummary | null>(null)
+  const [accounts, setAccounts] = useState<CustomerAccountSummary[]>([])
   const [token, setTokenState] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
@@ -63,7 +87,7 @@ export function CustomerAuthProvider({ children }: { children: React.ReactNode }
         const session = await bootstrapCustomerSession()
         if (!cancelled && session) {
           setTokenState(session.token)
-          setUser(session.user)
+          applyMeState(session.me, setUser, setApplication, setAccounts)
         }
       } finally {
         if (!cancelled) setIsLoading(false)
@@ -81,7 +105,9 @@ export function CustomerAuthProvider({ children }: { children: React.ReactNode }
     const result = await loginCustomer({ email, password })
     setCustomerTokens(result.token, result.refreshToken)
     setTokenState(result.token)
-    setUser(result.user)
+
+    const me = await loadCustomerMe(result.token)
+    applyMeState(me, setUser, setApplication, setAccounts)
   }, [])
 
   const logout = useCallback(async () => {
@@ -102,12 +128,14 @@ export function CustomerAuthProvider({ children }: { children: React.ReactNode }
     clearCustomerTokens()
     setTokenState(null)
     setUser(null)
+    setApplication(null)
+    setAccounts([])
     router.replace('/login')
   }, [router])
 
   const value = useMemo(
-    () => ({ user, token, isLoading, login, logout }),
-    [user, token, isLoading, login, logout]
+    () => ({ user, application, accounts, token, isLoading, login, logout }),
+    [user, application, accounts, token, isLoading, login, logout]
   )
 
   return (

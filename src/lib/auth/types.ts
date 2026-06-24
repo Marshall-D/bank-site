@@ -17,8 +17,30 @@ export type ActivatePayload = {
   confirmPassword: string
 }
 
+export type CustomerApplicationSummary = {
+  applicationReference: string
+  status: string
+  accountType: string
+  submittedAt: string | null
+  approvedAt: string | null
+  activatedAt: string | null
+}
+
+export type CustomerAccountSummary = {
+  id: string
+  displayName: string
+  accountNumberMasked: string
+  accountType: string
+  currency: string
+  balance: number
+  status: string
+  openedAt: string | null
+}
+
 export type CustomerMeResponse = {
   user: CustomerUser
+  application: CustomerApplicationSummary | null
+  accounts: CustomerAccountSummary[]
 }
 
 export type RefreshPayload = {

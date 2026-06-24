@@ -9,8 +9,9 @@ import {
   useState,
 } from 'react'
 import { useRouter } from 'next/navigation'
-import { fetchCustomerMe, loginCustomer } from '@/lib/auth/api'
-import { clearCustomerTokens, getCustomerToken, setCustomerTokens } from '@/lib/auth/storage'
+import { fetchCustomerMe, loginCustomer, logoutCustomerSession, revokeCustomerSession } from '@/lib/auth/api'
+import { tryRefreshCustomerSession } from '@/lib/auth/session'
+import { clearCustomerTokens, getCustomerRefreshToken, getCustomerToken, setCustomerTokens } from '@/lib/auth/storage'
 import type { CustomerUser } from '@/lib/auth/types'
 
 type CustomerAuthContextValue = {
@@ -18,10 +19,35 @@ type CustomerAuthContextValue = {
   token: string | null
   isLoading: boolean
   login: (email: string, password: string) => Promise<void>
-  logout: () => void
+  logout: () => Promise<void>
 }
 
 const CustomerAuthContext = createContext<CustomerAuthContextValue | null>(null)
+
+async function bootstrapCustomerSession(): Promise<{
+  token: string
+  user: CustomerUser
+} | null> {
+  let accessToken = getCustomerToken()
+  if (!accessToken) {
+    return null
+  }
+
+  try {
+    const { user } = await fetchCustomerMe(accessToken)
+    return { token: accessToken, user }
+  } catch {
+    const refreshedToken = await tryRefreshCustomerSession()
+    if (!refreshedToken) {
+      clearCustomerTokens()
+      return null
+    }
+
+    accessToken = refreshedToken
+    const { user } = await fetchCustomerMe(accessToken)
+    return { token: accessToken, user }
+  }
+}
 
 export function CustomerAuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter()
@@ -32,31 +58,19 @@ export function CustomerAuthProvider({ children }: { children: React.ReactNode }
   useEffect(() => {
     let cancelled = false
 
-    async function bootstrap() {
-      const storedToken = getCustomerToken()
-      if (!storedToken) {
-        if (!cancelled) setIsLoading(false)
-        return
-      }
-
+    async function loadSession() {
       try {
-        const { user: customerUser } = await fetchCustomerMe(storedToken)
-        if (!cancelled) {
-          setTokenState(storedToken)
-          setUser(customerUser)
-        }
-      } catch {
-        clearCustomerTokens()
-        if (!cancelled) {
-          setTokenState(null)
-          setUser(null)
+        const session = await bootstrapCustomerSession()
+        if (!cancelled && session) {
+          setTokenState(session.token)
+          setUser(session.user)
         }
       } finally {
         if (!cancelled) setIsLoading(false)
       }
     }
 
-    bootstrap()
+    loadSession()
 
     return () => {
       cancelled = true
@@ -70,7 +84,21 @@ export function CustomerAuthProvider({ children }: { children: React.ReactNode }
     setUser(result.user)
   }, [])
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    const refreshToken = getCustomerRefreshToken()
+
+    if (refreshToken) {
+      try {
+        await logoutCustomerSession({ refreshToken })
+      } catch {
+        try {
+          await revokeCustomerSession({ refreshToken })
+        } catch {
+          // Best-effort server revoke.
+        }
+      }
+    }
+
     clearCustomerTokens()
     setTokenState(null)
     setUser(null)

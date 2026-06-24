@@ -105,9 +105,9 @@ export function DashboardHeader() {
               <DropdownMenuItem
                 onClick={() => {
                   if (isAdminPortal && adminAuth?.logout) {
-                    adminAuth.logout()
+                    void adminAuth.logout()
                   } else if (!isAdminPortal && customerAuth?.logout) {
-                    customerAuth.logout()
+                    void customerAuth.logout()
                   }
                 }}
               >

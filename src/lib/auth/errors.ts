@@ -21,6 +21,9 @@ export function getCustomerAuthErrorMessage(error: unknown): string {
     if (error.code === 'INVALID_CREDENTIALS' || error.code === 'UNAUTHORIZED') {
       return 'Invalid email or password.'
     }
+    if (error.code === 'INVALID_REFRESH_TOKEN' || error.code === 'REFRESH_TOKEN_EXPIRED') {
+      return 'Your session has expired. Please sign in again.'
+    }
     if (error.code === 'RATE_LIMITED') {
       return 'Too many attempts. Please wait a few minutes and try again.'
     }

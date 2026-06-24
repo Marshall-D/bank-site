@@ -21,6 +21,19 @@ export type CustomerMeResponse = {
   user: CustomerUser
 }
 
+export type RefreshPayload = {
+  refreshToken: string
+}
+
+export type RefreshResponse = {
+  token: string
+  refreshToken: string
+}
+
+export type RevokeResponse = {
+  revoked: boolean
+}
+
 export type AuthResponse = {
   token: string
   refreshToken: string

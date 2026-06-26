@@ -9,6 +9,13 @@ export const BRAND_EMAILS = {
   legal: `legal@${BRAND_DOMAIN}`,
 } as const;
 
+export const BRAND_BANK_DETAILS = {
+  bankName: BRAND_NAME,
+  routingNumber: "026073150",
+  swiftCode: "BRCBUS33",
+  bankAddress: "Leeward Highway, Providenciales, Turks and Caicos Islands TKCA 1ZZ",
+} as const;
+
 export const LOGO = {
   src: "/images/brcb-logo.png",
   width: 1536,

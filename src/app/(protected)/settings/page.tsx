@@ -7,11 +7,13 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Eye, EyeOff, Shield, Bell, Lock, Smartphone, Mail } from 'lucide-react'
+import { Eye, EyeOff, Shield, Bell, Lock, Mail } from 'lucide-react'
+import { useCustomerAuth } from '@/components/customer/CustomerAuthProvider'
 import { currentUser } from '@/lib/mock-data'
 import { formatPhoneNumber } from '@/lib/utils'
 
 export default function SettingsPage() {
+  const { user } = useCustomerAuth()
   const [showCurrentPassword, setShowCurrentPassword] = useState(false)
   const [showNewPassword, setShowNewPassword] = useState(false)
   const [passwordChanged, setPasswordChanged] = useState(false)
@@ -23,8 +25,6 @@ export default function SettingsPage() {
     weeklyDigest: false,
     smsNotifications: false,
   })
-
-  const [twoFAEnabled, setTwoFAEnabled] = useState(false)
 
   return (
     <div className="space-y-8">
@@ -219,34 +219,30 @@ export default function SettingsPage() {
           <Card className="border-border">
             <CardHeader>
               <CardTitle>Two-Factor Authentication</CardTitle>
-              <CardDescription>Add an extra layer of security to your account</CardDescription>
+              <CardDescription>Email verification is required when signing in</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+              <div className="flex items-center justify-between rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-900 dark:bg-green-950/20">
                 <div className="flex items-center gap-3">
-                  <Smartphone className="h-5 w-5 text-muted-foreground" />
+                  <Mail className="h-5 w-5 text-green-600" />
                   <div>
-                    <p className="font-semibold text-sm">Authenticator App</p>
+                    <p className="text-sm font-semibold">Email verification</p>
                     <p className="text-xs text-muted-foreground">
-                      {twoFAEnabled ? 'Enabled' : 'Not enabled'}
+                      Enabled for {user?.email || currentUser.email}
                     </p>
                   </div>
                 </div>
-                <Button
-                  variant={twoFAEnabled ? 'outline' : 'default'}
-                  onClick={() => setTwoFAEnabled(!twoFAEnabled)}
-                >
-                  {twoFAEnabled ? 'Disable' : 'Enable'}
-                </Button>
+                <div className="rounded bg-green-600 px-3 py-1 text-xs font-semibold text-white">
+                  Enabled
+                </div>
               </div>
 
-              {twoFAEnabled && (
-                <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-900">
-                  <p className="text-sm text-blue-900 dark:text-blue-100">
-                    Two-factor authentication is now enabled. You&apos;ll be asked to enter a code when signing in.
-                  </p>
-                </div>
-              )}
+              <div className="rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-900 dark:bg-green-950/20">
+                <p className="text-sm text-green-900 dark:text-green-100">
+                  Two-factor authentication is active. Sign-in verification codes are sent to your
+                  registered email address.
+                </p>
+              </div>
             </CardContent>
           </Card>
 

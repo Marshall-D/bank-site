@@ -13,11 +13,13 @@ import {
 
 import { Logo } from '@/components/brand/Logo'
 import { Button } from '@/components/ui/button'
+import { useCustomerAuth } from '@/components/customer/CustomerAuthProvider'
 import { useDashboardNav } from '@/components/layout/dashboard-nav'
 
 export function DashboardSidebar() {
   const pathname = usePathname()
   const { isOpen, close } = useDashboardNav()
+  const { logout } = useCustomerAuth()
 
   const navItems = [
     { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -66,7 +68,10 @@ export function DashboardSidebar() {
             <Button
               variant="outline"
               className="w-full justify-start gap-3"
-              onClick={close}
+              onClick={() => {
+                close()
+                void logout()
+              }}
             >
               <LogOut className="h-5 w-5" />
               <span>Logout</span>

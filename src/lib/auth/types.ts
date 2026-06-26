@@ -29,6 +29,7 @@ export type CustomerApplicationSummary = {
 export type CustomerAccountSummary = {
   id: string
   displayName: string
+  accountNumber?: string
   accountNumberMasked: string
   accountType: string
   currency: string

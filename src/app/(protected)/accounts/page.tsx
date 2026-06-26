@@ -1,10 +1,12 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { MoreVertical, Plus } from 'lucide-react'
 import { useCustomerAuth } from '@/components/customer/CustomerAuthProvider'
+import { ReceiveMoneyModal } from '@/components/customer/ReceiveMoneyModal'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import {
   DropdownMenu,
@@ -21,9 +23,12 @@ function formatAccountStatus(status: string) {
 }
 
 export default function AccountsPage() {
-  const { accounts } = useCustomerAuth()
+  const { accounts, user } = useCustomerAuth()
   const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0)
   const primaryCurrency = accounts[0]?.currency ?? 'USD'
+  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null)
+
+  const selectedAccount = accounts.find((account) => account.id === selectedAccountId) ?? null
 
   return (
     <div className="space-y-8">
@@ -114,7 +119,7 @@ export default function AccountsPage() {
                   <Button size="sm" variant="default" className="flex-1" asChild>
                     <Link href="/transfer">Transfer</Link>
                   </Button>
-                  <Button size="sm" variant="outline" className="flex-1">
+                  <Button size="sm" variant="outline" className="flex-1" onClick={() => setSelectedAccountId(account.id)}>
                     Deposit
                   </Button>
                 </div>
@@ -157,6 +162,15 @@ export default function AccountsPage() {
           </div>
         </CardContent>
       </Card>
+
+      <ReceiveMoneyModal
+        open={selectedAccountId !== null}
+        onOpenChange={(open) => {
+          if (!open) setSelectedAccountId(null)
+        }}
+        account={selectedAccount}
+        accountHolderName={user?.name || 'Account holder'}
+      />
     </div>
   )
 }

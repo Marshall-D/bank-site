@@ -1,10 +1,13 @@
 'use client'
 
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowUpRight, ArrowDownLeft, Send, Download, TrendingUp, AlertCircle } from 'lucide-react'
+import { ArrowUpRight, ArrowDownLeft, Send, Download, TrendingUp, AlertCircle, ShieldCheck } from 'lucide-react'
 import Link from 'next/link'
 import { useCustomerAuth } from '@/components/customer/CustomerAuthProvider'
+import { ComingSoonDialog } from '@/components/customer/ComingSoonDialog'
+import { ReceiveMoneyModal } from '@/components/customer/ReceiveMoneyModal'
 import { transactions } from '@/lib/mock-data'
 import { APPLICATION_STATUS_LABELS } from '@/lib/application/statusLabels'
 import { formatCurrency, formatDate } from '@/lib/utils'
@@ -22,6 +25,19 @@ export default function DashboardPage() {
   const recentTransactions = transactions.slice(0, 5)
   const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0)
   const memberSince = application?.activatedAt || primaryAccount?.openedAt
+  const [receiveMoneyOpen, setReceiveMoneyOpen] = useState(false)
+  const [comingSoonFeature, setComingSoonFeature] = useState<string | null>(null)
+
+  const handleQuickAction = (label: string) => {
+    if (label === 'Request Money') {
+      setReceiveMoneyOpen(true)
+      return
+    }
+
+    if (label === 'Invest' || label === 'Pay Bills') {
+      setComingSoonFeature(label)
+    }
+  }
 
   return (
     <div className="space-y-8">
@@ -48,22 +64,38 @@ export default function DashboardPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
           { icon: Send, label: 'Transfer', href: '/transfer' },
-          { icon: Download, label: 'Request Money', href: '#' },
-          { icon: TrendingUp, label: 'Invest', href: '#' },
-          { icon: AlertCircle, label: 'Pay Bills', href: '#' },
+          { icon: Download, label: 'Request Money' },
+          { icon: TrendingUp, label: 'Invest' },
+          { icon: AlertCircle, label: 'Pay Bills' },
         ].map((action) => {
           const Icon = action.icon
+          const isLink = action.label === 'Transfer'
+
+          if (isLink && action.href) {
+            return (
+              <Button
+                key={action.label}
+                variant="outline"
+                className="flex-col gap-2 h-auto py-4"
+                asChild
+              >
+                <Link href={action.href}>
+                  <Icon className="h-5 w-5" />
+                  <span className="text-xs">{action.label}</span>
+                </Link>
+              </Button>
+            )
+          }
+
           return (
             <Button
               key={action.label}
               variant="outline"
               className="flex-col gap-2 h-auto py-4"
-              asChild
+              onClick={() => handleQuickAction(action.label)}
             >
-              <Link href={action.href}>
-                <Icon className="h-5 w-5" />
-                <span className="text-xs">{action.label}</span>
-              </Link>
+              <Icon className="h-5 w-5" />
+              <span className="text-xs">{action.label}</span>
             </Button>
           )
         })}
@@ -167,25 +199,20 @@ export default function DashboardPage() {
         </div>
 
         <div className="space-y-6">
-          <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900">
+          <Card className="border-green-200 bg-green-50 dark:bg-green-950/20 dark:border-green-900">
             <CardContent className="pt-6">
               <div className="flex gap-4">
-                <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                <ShieldCheck className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-semibold text-sm text-amber-950 dark:text-amber-100 mb-1">
-                    Enable 2FA
+                  <p className="font-semibold text-sm text-green-950 dark:text-green-100 mb-1">
+                    Two-factor authentication enabled
                   </p>
-                  <p className="text-xs text-amber-900/70 dark:text-amber-200/70 mb-3">
-                    Protect your account with two-factor authentication
+                  <p className="text-xs text-green-900/70 dark:text-green-200/70">
+                    Sign-in verification codes are sent to{' '}
+                    <span className="font-medium text-green-950 dark:text-green-100">
+                      {user?.email || 'your email'}
+                    </span>
                   </p>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="border-amber-200 hover:bg-amber-100 dark:border-amber-900 dark:hover:bg-amber-900/30"
-                    asChild
-                  >
-                    <Link href="/settings">Enable Now</Link>
-                  </Button>
                 </div>
               </div>
             </CardContent>
@@ -253,6 +280,21 @@ export default function DashboardPage() {
           </Card>
         </div>
       </div>
+
+      <ReceiveMoneyModal
+        open={receiveMoneyOpen}
+        onOpenChange={setReceiveMoneyOpen}
+        account={primaryAccount ?? null}
+        accountHolderName={user?.name || 'Account holder'}
+      />
+
+      <ComingSoonDialog
+        open={comingSoonFeature !== null}
+        onOpenChange={(open) => {
+          if (!open) setComingSoonFeature(null)
+        }}
+        featureName={comingSoonFeature || 'Feature'}
+      />
     </div>
   )
 }

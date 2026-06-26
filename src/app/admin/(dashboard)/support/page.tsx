@@ -28,10 +28,16 @@ import {
   type SupportMessageListItem,
 } from '@/lib/admin/support/api'
 import { getAdminAuthErrorMessage } from '@/lib/admin/errors'
-import { SUPPORT_STATUS_LABELS } from '@/lib/support/constants'
+import { SUPPORT_STATUS_LABELS, SUPPORT_SOURCE_LABELS } from '@/lib/support/constants'
 import { formatDate } from '@/lib/utils'
 
 type StatusFilter = 'all' | 'new' | 'in_progress' | 'resolved'
+type SourceFilter = 'all' | 'public_support_form' | 'password_reset'
+
+function sourceBadgeVariant(source: string): 'default' | 'secondary' | 'outline' {
+  if (source === 'password_reset') return 'secondary'
+  return 'outline'
+}
 
 function statusBadgeVariant(status: string): 'default' | 'secondary' | 'outline' {
   if (status === 'new') return 'default'
@@ -43,6 +49,7 @@ export default function AdminSupportPage() {
   const { token, logout } = useAdminAuth()
   const [items, setItems] = useState<SupportMessageListItem[]>([])
   const [filterStatus, setFilterStatus] = useState<StatusFilter>('all')
+  const [filterSource, setFilterSource] = useState<SourceFilter>('all')
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 0 })
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -59,6 +66,7 @@ export default function AdminSupportPage() {
         limit: 50,
         sort: '-createdAt',
         status: filterStatus === 'all' ? undefined : filterStatus,
+        source: filterSource === 'all' ? undefined : filterSource,
       })
       setItems(result.items)
       setPagination(result.pagination)
@@ -72,7 +80,7 @@ export default function AdminSupportPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [filterStatus, logout, token])
+  }, [filterSource, filterStatus, logout, token])
 
   useEffect(() => {
     loadMessages()
@@ -96,21 +104,38 @@ export default function AdminSupportPage() {
           <CardTitle>Filter</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="max-w-xs space-y-2">
-            <Select
-              value={filterStatus}
-              onValueChange={(value) => setFilterStatus(value as StatusFilter)}
-            >
-              <SelectTrigger id="support-status">
-                <SelectValue placeholder="All statuses" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All statuses</SelectItem>
-                <SelectItem value="new">New</SelectItem>
-                <SelectItem value="in_progress">In progress</SelectItem>
-                <SelectItem value="resolved">Resolved</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Select
+                value={filterStatus}
+                onValueChange={(value) => setFilterStatus(value as StatusFilter)}
+              >
+                <SelectTrigger id="support-status">
+                  <SelectValue placeholder="All statuses" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All statuses</SelectItem>
+                  <SelectItem value="new">New</SelectItem>
+                  <SelectItem value="in_progress">In progress</SelectItem>
+                  <SelectItem value="resolved">Resolved</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Select
+                value={filterSource}
+                onValueChange={(value) => setFilterSource(value as SourceFilter)}
+              >
+                <SelectTrigger id="support-source">
+                  <SelectValue placeholder="All sources" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All sources</SelectItem>
+                  <SelectItem value="public_support_form">Support form</SelectItem>
+                  <SelectItem value="password_reset">Password reset</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -139,6 +164,7 @@ export default function AdminSupportPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Reference</TableHead>
+                    <TableHead>Source</TableHead>
                     <TableHead>From</TableHead>
                     <TableHead>Subject</TableHead>
                     <TableHead>Status</TableHead>
@@ -150,6 +176,11 @@ export default function AdminSupportPage() {
                   {items.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell className="font-mono text-sm">{item.ticketId}</TableCell>
+                      <TableCell>
+                        <Badge variant={sourceBadgeVariant(item.source)}>
+                          {SUPPORT_SOURCE_LABELS[item.source] || item.source}
+                        </Badge>
+                      </TableCell>
                       <TableCell>
                         <div>
                           <p className="font-medium">{item.name}</p>

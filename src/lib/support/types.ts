@@ -6,6 +6,11 @@ export type SubmitSupportMessagePayload = {
   website?: string
 }
 
+export type SubmitPasswordResetRequestPayload = {
+  email: string
+  website?: string
+}
+
 export type SubmitSupportMessageResponse = {
   ticketId: string
   submittedAt: string

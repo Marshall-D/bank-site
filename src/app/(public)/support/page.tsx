@@ -38,7 +38,7 @@ export default function SupportPage() {
     {
       id: 'faq-1',
       question: 'How do I reset my password?',
-      answer: 'Click on "Forgot Password" on the login page, enter your email, and follow the instructions sent to your inbox.',
+      answer: 'Go to the sign-in page, click "Forgot?", enter your email, and submit the reset request. Our support team will follow up to help you regain access.',
     },
     {
       id: 'faq-2',

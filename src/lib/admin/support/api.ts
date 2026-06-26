@@ -9,6 +9,7 @@ export type SupportMessageListItem = {
   email: string
   subject: string
   status: string
+  source: string
   createdAt: string
 }
 
@@ -22,6 +23,7 @@ export type ListSupportMessagesParams = {
   page?: number
   limit?: number
   status?: string
+  source?: string
   email?: string
   sort?: string
 }
@@ -53,6 +55,7 @@ function buildSearchParams(params: ListSupportMessagesParams): URLSearchParams {
   if (params.page) searchParams.set('page', String(params.page))
   if (params.limit) searchParams.set('limit', String(params.limit))
   if (params.status) searchParams.set('status', params.status)
+  if (params.source) searchParams.set('source', params.source)
   if (params.email) searchParams.set('email', params.email.trim().toLowerCase())
   if (params.sort) searchParams.set('sort', params.sort)
 

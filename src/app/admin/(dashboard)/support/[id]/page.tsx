@@ -21,7 +21,7 @@ import {
   type SupportMessageDetail,
 } from '@/lib/admin/support/api'
 import { getAdminAuthErrorMessage } from '@/lib/admin/errors'
-import { SUPPORT_STATUS_LABELS } from '@/lib/support/constants'
+import { SUPPORT_SOURCE_LABELS, SUPPORT_STATUS_LABELS } from '@/lib/support/constants'
 import { formatDateLong } from '@/lib/utils'
 
 function statusBadgeVariant(status: string): 'default' | 'secondary' | 'outline' {
@@ -115,6 +115,9 @@ export default function AdminSupportDetailPage() {
             <h1 className="text-3xl font-bold">{item.ticketId}</h1>
             <Badge variant={statusBadgeVariant(item.status)}>
               {SUPPORT_STATUS_LABELS[item.status] || item.status}
+            </Badge>
+            <Badge variant={item.source === 'password_reset' ? 'secondary' : 'outline'}>
+              {SUPPORT_SOURCE_LABELS[item.source] || item.source}
             </Badge>
           </div>
           <p className="text-muted-foreground">

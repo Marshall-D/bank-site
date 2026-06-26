@@ -4,6 +4,7 @@ import { SupportApiError } from './errors'
 import type {
   ApiErrorResponse,
   ApiSuccessResponse,
+  SubmitPasswordResetRequestPayload,
   SubmitSupportMessagePayload,
   SubmitSupportMessageResponse,
 } from './types'
@@ -19,6 +20,29 @@ export async function submitSupportMessage(
       email: payload.email.trim().toLowerCase(),
       subject: payload.subject.trim(),
       message: payload.message.trim(),
+      website: payload.website ?? '',
+    }),
+  })
+
+  const data = (await response.json()) as
+    | ApiSuccessResponse<SubmitSupportMessageResponse>
+    | ApiErrorResponse
+
+  if (!response.ok || !data.success) {
+    throw new SupportApiError(data as ApiErrorResponse)
+  }
+
+  return data.data
+}
+
+export async function submitPasswordResetRequest(
+  payload: SubmitPasswordResetRequestPayload
+): Promise<SubmitSupportMessageResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/support/password-reset-request`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      email: payload.email.trim().toLowerCase(),
       website: payload.website ?? '',
     }),
   })

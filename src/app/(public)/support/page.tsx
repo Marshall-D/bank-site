@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import { useState } from 'react'
-import { ChevronDown, ChevronUp, Mail, MessageCircle, Phone } from 'lucide-react'
+import { ChevronDown, ChevronUp, Mail, Phone } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -10,11 +10,27 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { BRAND_EMAILS, BRAND_NAME, BRAND_SHORT } from '@/lib/brand'
+import { submitSupportMessage } from '@/lib/support/api'
+import { SUPPORT_FIELD_LIMITS } from '@/lib/support/constants'
+import { getSupportErrorMessage } from '@/lib/support/errors'
+import { validateSupportForm } from '@/lib/support/validation'
 import { SUPPORT_IMAGES } from '@/lib/site-images'
+
+const emptyForm = {
+  name: '',
+  email: '',
+  subject: '',
+  message: '',
+  website: '',
+}
 
 export default function SupportPage() {
   const [expandedFAQ, setExpandedFAQ] = useState<string | null>(null)
-  const [isSubmitted, setIsSubmitted] = useState(false)
+  const [form, setForm] = useState(emptyForm)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [ticketId, setTicketId] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const { helpDesk } = SUPPORT_IMAGES
 
@@ -51,15 +67,43 @@ export default function SupportPage() {
     },
   ]
 
-  const handleContactSubmit = (e: React.FormEvent) => {
+  const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsSubmitted(true)
-    setTimeout(() => setIsSubmitted(false), 3000)
+    setSubmitError(null)
+    setTicketId(null)
+
+    const errors = validateSupportForm(form)
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors)
+      return
+    }
+
+    setFieldErrors({})
+    setIsSubmitting(true)
+
+    try {
+      const result = await submitSupportMessage(form)
+      setTicketId(result.ticketId)
+      setForm(emptyForm)
+    } catch (error) {
+      setSubmitError(getSupportErrorMessage(error))
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const updateField = (field: keyof typeof form, value: string) => {
+    setForm((prev) => ({ ...prev, [field]: value }))
+    setFieldErrors((prev) => {
+      const next = { ...prev }
+      delete next[field]
+      return next
+    })
+    setSubmitError(null)
   }
 
   return (
     <>
-      {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-b from-primary-light/10 to-transparent py-16 sm:py-24">
         <div className="container mx-auto max-w-5xl px-4">
           <div className="mb-10 text-center">
@@ -83,10 +127,9 @@ export default function SupportPage() {
         </div>
       </section>
 
-      {/* Contact Methods */}
       <section className="py-20 sm:py-32">
         <div className="container mx-auto max-w-4xl px-4">
-          <div className="mb-16 grid grid-cols-1 gap-8 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
             {[
               {
                 icon: Mail,
@@ -99,12 +142,6 @@ export default function SupportPage() {
                 title: 'Phone',
                 description: 'Available 24/7',
                 contact: '+1 (800) 272-2253',
-              },
-              {
-                icon: MessageCircle,
-                title: 'Live Chat',
-                description: 'Instant support',
-                contact: 'Start Chat',
               },
             ].map((method) => {
               const Icon = method.icon
@@ -127,20 +164,18 @@ export default function SupportPage() {
         </div>
       </section>
 
-      {/* Contact Form */}
       <section className="border-y border-border bg-card py-20 sm:py-32">
         <div className="container mx-auto max-w-5xl px-4">
           <h2 className="mb-12 text-center text-3xl font-bold">Send us a message</h2>
 
-          <div className="grid grid-cols-1 items-stretch gap-8 lg:grid-cols-2 lg:gap-12">
-            <div className="relative min-h-[280px] overflow-hidden rounded-2xl border border-border shadow-md lg:min-h-0">
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:items-start lg:gap-12">
+            <div className="relative aspect-[4/5] min-h-[280px] w-full overflow-hidden rounded-2xl border border-border shadow-md">
               <Image
                 src={helpDesk.src}
                 alt={helpDesk.alt}
-                width={helpDesk.width}
-                height={helpDesk.height}
+                fill
                 sizes="(max-width: 1024px) 100vw, 50vw"
-                className="h-full w-full object-cover"
+                className="object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-primary/50 via-primary/10 to-transparent" />
               <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
@@ -153,42 +188,104 @@ export default function SupportPage() {
 
             <Card className="border-border">
               <CardContent className="pt-6">
-                <form onSubmit={handleContactSubmit} className="space-y-4">
+                <form onSubmit={handleContactSubmit} className="space-y-4" noValidate>
+                  <input
+                    type="text"
+                    name="website"
+                    value={form.website}
+                    onChange={(e) => updateField('website', e.target.value)}
+                    autoComplete="off"
+                    tabIndex={-1}
+                    aria-hidden="true"
+                    className="hidden"
+                  />
+
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div className="space-y-2">
                       <Label htmlFor="name">Name</Label>
-                      <Input id="name" placeholder="Your name" required />
+                      <Input
+                        id="name"
+                        value={form.name}
+                        onChange={(e) => updateField('name', e.target.value)}
+                        maxLength={SUPPORT_FIELD_LIMITS.nameMax}
+                        required
+                        disabled={isSubmitting}
+                      />
+                      {fieldErrors.name && (
+                        <p className="text-sm text-destructive">{fieldErrors.name}</p>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="email">Email</Label>
-                      <Input id="email" type="email" placeholder="your@email.com" required />
+                      <Input
+                        id="email"
+                        type="email"
+                        value={form.email}
+                        onChange={(e) => updateField('email', e.target.value)}
+                        maxLength={SUPPORT_FIELD_LIMITS.emailMax}
+                        required
+                        disabled={isSubmitting}
+                      />
+                      {fieldErrors.email && (
+                        <p className="text-sm text-destructive">{fieldErrors.email}</p>
+                      )}
                     </div>
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="subject">Subject</Label>
-                    <Input id="subject" placeholder="How can we help?" required />
+                    <Input
+                      id="subject"
+                      value={form.subject}
+                      onChange={(e) => updateField('subject', e.target.value)}
+                      maxLength={SUPPORT_FIELD_LIMITS.subjectMax}
+                      required
+                      disabled={isSubmitting}
+                    />
+                    {fieldErrors.subject && (
+                      <p className="text-sm text-destructive">{fieldErrors.subject}</p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="message">Message</Label>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="message">Message</Label>
+                      <span className="text-xs text-muted-foreground">
+                        {form.message.length}/{SUPPORT_FIELD_LIMITS.messageMax}
+                      </span>
+                    </div>
                     <Textarea
                       id="message"
-                      placeholder="Describe your issue..."
+                      value={form.message}
+                      onChange={(e) => updateField('message', e.target.value)}
+                      maxLength={SUPPORT_FIELD_LIMITS.messageMax}
                       rows={5}
+                      className="field-sizing-fixed resize-y"
                       required
+                      disabled={isSubmitting}
                     />
+                    {fieldErrors.message && (
+                      <p className="text-sm text-destructive">{fieldErrors.message}</p>
+                    )}
                   </div>
 
-                  <Button type="submit" size="lg" className="w-full">
-                    Send Message
-                  </Button>
-
-                  {isSubmitted && (
-                    <div className="rounded-lg bg-primary/10 p-4 text-sm font-medium text-primary">
-                      Thanks for reaching out! We&apos;ll respond within 2 hours.
+                  {submitError && (
+                    <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+                      {submitError}
                     </div>
                   )}
+
+                  {ticketId && (
+                    <div className="rounded-lg bg-primary/10 p-4 text-sm text-primary">
+                      Thanks for reaching out! Your reference is{' '}
+                      <span className="font-semibold">{ticketId}</span>. We&apos;ll respond within 2
+                      hours.
+                    </div>
+                  )}
+
+                  <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
+                    {isSubmitting ? 'Sending...' : 'Send Message'}
+                  </Button>
                 </form>
               </CardContent>
             </Card>
@@ -196,7 +293,6 @@ export default function SupportPage() {
         </div>
       </section>
 
-      {/* FAQ Section */}
       <section className="py-20 sm:py-32">
         <div className="container mx-auto max-w-3xl px-4">
           <h2 className="mb-12 text-center text-3xl font-bold">Frequently Asked Questions</h2>

@@ -9,7 +9,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { BRAND_NAME, BRAND_SHORT } from '@/lib/brand'
+import { BRAND_EMAILS, BRAND_NAME, BRAND_SHORT } from '@/lib/brand'
 import { SUPPORT_IMAGES } from '@/lib/site-images'
 
 export default function SupportPage() {
@@ -92,7 +92,7 @@ export default function SupportPage() {
                 icon: Mail,
                 title: 'Email',
                 description: 'Response within 2 hours',
-                contact: 'support@brcb.com',
+                contact: BRAND_EMAILS.support,
               },
               {
                 icon: Phone,

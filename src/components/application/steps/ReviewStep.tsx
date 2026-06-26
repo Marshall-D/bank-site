@@ -91,7 +91,7 @@ export function ReviewStep({ form, localDocuments, errors, onChange }: ReviewSte
           />
           <Label htmlFor="termsAccepted" className="font-normal text-sm leading-relaxed">
             I accept the{' '}
-            <Link href="/" className="text-primary hover:underline">
+            <Link href="/terms-of-service" className="text-primary hover:underline">
               Terms of Service
             </Link>
           </Label>
@@ -106,7 +106,7 @@ export function ReviewStep({ form, localDocuments, errors, onChange }: ReviewSte
           />
           <Label htmlFor="privacyAccepted" className="font-normal text-sm leading-relaxed">
             I accept the{' '}
-            <Link href="/" className="text-primary hover:underline">
+            <Link href="/privacy-policy" className="text-primary hover:underline">
               Privacy Policy
             </Link>
           </Label>

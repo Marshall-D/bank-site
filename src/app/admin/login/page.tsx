@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Logo } from '@/components/brand/Logo'
 import { AdminAuthProvider, useAdminAuth } from '@/components/admin/AdminAuthProvider'
 import { getAdminAuthErrorMessage } from '@/lib/admin/errors'
+import { BRAND_DOMAIN } from '@/lib/brand'
 
 function AdminLoginForm() {
   const router = useRouter()
@@ -72,7 +73,7 @@ function AdminLoginForm() {
                 id="email"
                 name="email"
                 type="email"
-                placeholder="admin@yourbank.com"
+                placeholder={`admin@${BRAND_DOMAIN}`}
                 value={formData.email}
                 onChange={handleChange}
                 required

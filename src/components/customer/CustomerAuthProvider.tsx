@@ -27,6 +27,7 @@ type CustomerAuthContextValue = {
   isLoading: boolean
   login: (email: string, password: string) => Promise<void>
   logout: () => Promise<void>
+  refreshSession: () => Promise<void>
 }
 
 const CustomerAuthContext = createContext<CustomerAuthContextValue | null>(null)
@@ -133,9 +134,17 @@ export function CustomerAuthProvider({ children }: { children: React.ReactNode }
     router.replace('/login')
   }, [router])
 
+  const refreshSession = useCallback(async () => {
+    const accessToken = getCustomerToken()
+    if (!accessToken) return
+
+    const me = await loadCustomerMe(accessToken)
+    applyMeState(me, setUser, setApplication, setAccounts)
+  }, [])
+
   const value = useMemo(
-    () => ({ user, application, accounts, token, isLoading, login, logout }),
-    [user, application, accounts, token, isLoading, login, logout]
+    () => ({ user, application, accounts, token, isLoading, login, logout, refreshSession }),
+    [user, application, accounts, token, isLoading, login, logout, refreshSession]
   )
 
   return (

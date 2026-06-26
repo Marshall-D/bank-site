@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ArrowUpRight, ArrowDownLeft, Send, Download, TrendingUp, AlertCircle, ShieldCheck } from 'lucide-react'
@@ -8,8 +8,15 @@ import Link from 'next/link'
 import { useCustomerAuth } from '@/components/customer/CustomerAuthProvider'
 import { ComingSoonDialog } from '@/components/customer/ComingSoonDialog'
 import { ReceiveMoneyModal } from '@/components/customer/ReceiveMoneyModal'
-import { transactions } from '@/lib/mock-data'
 import { APPLICATION_STATUS_LABELS } from '@/lib/application/statusLabels'
+import { fetchTransactions } from '@/lib/transactions/api'
+import {
+  isIncomingTransaction,
+  transactionAmountClass,
+  transactionAmountPrefix,
+  transactionIconClass,
+} from '@/lib/transactions/display'
+import type { TransactionListItem } from '@/lib/transactions/types'
 import { formatCurrency, formatDate } from '@/lib/utils'
 
 function formatAccountStatus(status: string) {
@@ -20,13 +27,41 @@ function formatAccountStatus(status: string) {
 }
 
 export default function DashboardPage() {
-  const { user, application, accounts } = useCustomerAuth()
+  const { user, application, accounts, token } = useCustomerAuth()
   const primaryAccount = accounts[0]
-  const recentTransactions = transactions.slice(0, 5)
+  const [recentTransactions, setRecentTransactions] = useState<TransactionListItem[]>([])
+  const [transactionsLoading, setTransactionsLoading] = useState(true)
   const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0)
   const memberSince = application?.activatedAt || primaryAccount?.openedAt
   const [receiveMoneyOpen, setReceiveMoneyOpen] = useState(false)
   const [comingSoonFeature, setComingSoonFeature] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!token) {
+      setTransactionsLoading(false)
+      return
+    }
+
+    let cancelled = false
+
+    async function loadRecentTransactions() {
+      setTransactionsLoading(true)
+      try {
+        const result = await fetchTransactions(token!, { page: 1, limit: 5, sort: '-createdAt' })
+        if (!cancelled) setRecentTransactions(result.items)
+      } catch {
+        if (!cancelled) setRecentTransactions([])
+      } finally {
+        if (!cancelled) setTransactionsLoading(false)
+      }
+    }
+
+    loadRecentTransactions()
+
+    return () => {
+      cancelled = true
+    }
+  }, [token])
 
   const handleQuickAction = (label: string) => {
     if (label === 'Request Money') {
@@ -149,6 +184,11 @@ export default function DashboardPage() {
               </Button>
             </CardHeader>
             <CardContent>
+              {transactionsLoading ? (
+                <p className="py-4 text-center text-sm text-muted-foreground">Loading transactions...</p>
+              ) : recentTransactions.length === 0 ? (
+                <p className="py-4 text-center text-sm text-muted-foreground">No transactions yet.</p>
+              ) : (
               <div className="space-y-4">
                 {recentTransactions.map((txn) => (
                   <div
@@ -156,14 +196,8 @@ export default function DashboardPage() {
                     className="flex items-center justify-between py-3 border-b border-border last:border-0"
                   >
                     <div className="flex items-center gap-4">
-                      <div
-                        className={`p-2 rounded-lg ${
-                          txn.type === 'credit' || txn.type === 'transfer'
-                            ? 'bg-green-500/10'
-                            : 'bg-red-500/10'
-                        }`}
-                      >
-                        {txn.type === 'credit' || txn.type === 'transfer' ? (
+                      <div className={`p-2 rounded-lg ${transactionIconClass(txn)}`}>
+                        {isIncomingTransaction(txn) ? (
                           <ArrowDownLeft
                             className={`h-5 w-5 ${
                               txn.type === 'credit' ? 'text-green-600' : 'text-blue-600'
@@ -175,25 +209,20 @@ export default function DashboardPage() {
                       </div>
                       <div>
                         <p className="font-medium text-sm">{txn.description}</p>
-                        <p className="text-xs text-muted-foreground">{formatDate(txn.date)}</p>
+                        <p className="text-xs text-muted-foreground">{formatDate(new Date(txn.date))}</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p
-                        className={`font-bold text-sm ${
-                          txn.type === 'credit' || txn.type === 'transfer'
-                            ? 'text-green-600'
-                            : 'text-red-600'
-                        }`}
-                      >
-                        {txn.type === 'credit' || txn.type === 'transfer' ? '+' : '-'}
-                        {formatCurrency(txn.amount)}
+                      <p className={`font-bold text-sm ${transactionAmountClass(txn)}`}>
+                        {transactionAmountPrefix(txn)}
+                        {formatCurrency(txn.amount, txn.currency)}
                       </p>
                       <p className="text-xs text-muted-foreground capitalize">{txn.status}</p>
                     </div>
                   </div>
                 ))}
               </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -263,8 +292,6 @@ export default function DashboardPage() {
             <CardContent className="space-y-2">
               {[
                 { label: 'Statements', href: '#' },
-                { label: 'Card Settings', href: '#' },
-                { label: 'Limits & Fees', href: '#' },
                 { label: 'Security Center', href: '/settings' },
               ].map((link) => (
                 <Button

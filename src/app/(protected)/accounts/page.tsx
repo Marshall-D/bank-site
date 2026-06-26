@@ -4,16 +4,9 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { MoreVertical, Plus } from 'lucide-react'
 import { useCustomerAuth } from '@/components/customer/CustomerAuthProvider'
 import { ReceiveMoneyModal } from '@/components/customer/ReceiveMoneyModal'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 
 function formatAccountStatus(status: string) {
   return status
@@ -32,17 +25,9 @@ export default function AccountsPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">Accounts</h1>
-          <p className="text-muted-foreground">Manage your accounts</p>
-        </div>
-        <Button asChild>
-          <a href="#" className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            Add Account
-          </a>
-        </Button>
+      <div>
+        <h1 className="text-3xl font-bold mb-2">Accounts</h1>
+        <p className="text-muted-foreground">Manage your accounts</p>
       </div>
 
       <Card className="bg-gradient-to-br from-secondary to-secondary/50 border-0">
@@ -64,26 +49,11 @@ export default function AccountsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {accounts.map((account) => (
             <Card key={account.id} className="border-border hover:shadow-lg transition-shadow">
-              <CardHeader className="flex flex-row items-start justify-between space-y-0">
-                <div>
-                  <CardTitle>{account.displayName}</CardTitle>
-                  <CardDescription className="capitalize">
-                    {account.accountType.replace(/_/g, ' ')} Account
-                  </CardDescription>
-                </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem>View Details</DropdownMenuItem>
-                    <DropdownMenuItem>Download Statement</DropdownMenuItem>
-                    <DropdownMenuItem>Settings</DropdownMenuItem>
-                    <DropdownMenuItem className="text-destructive">Close Account</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+              <CardHeader>
+                <CardTitle>{account.displayName}</CardTitle>
+                <CardDescription className="capitalize">
+                  {account.accountType.replace(/_/g, ' ')} Account
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-1">

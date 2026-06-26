@@ -1,6 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import { ArrowDownLeft, ArrowUpRight, Download, Search } from 'lucide-react'
+
+import { useCustomerAuth } from '@/components/customer/CustomerAuthProvider'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -12,48 +15,78 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { ArrowUpRight, ArrowDownLeft, Download, Search, Filter } from 'lucide-react'
-import { transactions, accounts } from '@/lib/mock-data'
+import { fetchTransactions } from '@/lib/transactions/api'
+import {
+  isIncomingTransaction,
+  transactionAmountClass,
+  transactionAmountPrefix,
+  transactionIconClass,
+} from '@/lib/transactions/display'
+import type { TransactionListItem } from '@/lib/transactions/types'
 import { formatCurrency, formatDate } from '@/lib/utils'
 
 export default function TransactionsPage() {
+  const { accounts, token } = useCustomerAuth()
   const [searchTerm, setSearchTerm] = useState('')
   const [filterType, setFilterType] = useState<string>('all')
   const [filterAccount, setFilterAccount] = useState<string>('all')
+  const [items, setItems] = useState<TransactionListItem[]>([])
+  const [total, setTotal] = useState(0)
+  const [isLoading, setIsLoading] = useState(true)
 
-  const filteredTransactions = transactions.filter((txn) => {
-    const matchesSearch = txn.description.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesType = filterType === 'all' || txn.type === filterType
-    const matchesAccount = filterAccount === 'all' || txn.accountId === filterAccount
+  const loadTransactions = useCallback(async () => {
+    if (!token) return
 
-    return matchesSearch && matchesType && matchesAccount
-  })
+    setIsLoading(true)
+    try {
+      const result = await fetchTransactions(token, {
+        page: 1,
+        limit: 100,
+        sort: '-createdAt',
+        accountId: filterAccount === 'all' ? undefined : filterAccount,
+        type: filterType,
+        search: searchTerm.trim() || undefined,
+      })
+      setItems(result.items)
+      setTotal(result.pagination.total)
+    } catch {
+      setItems([])
+      setTotal(0)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [filterAccount, filterType, searchTerm, token])
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      void loadTransactions()
+    }, searchTerm ? 300 : 0)
+
+    return () => window.clearTimeout(timeout)
+  }, [loadTransactions, searchTerm])
 
   return (
     <div className="space-y-8">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Transactions</h1>
+          <h1 className="mb-2 text-3xl font-bold">Transactions</h1>
           <p className="text-muted-foreground">View and manage your transactions</p>
         </div>
-        <Button variant="outline" className="flex items-center gap-2">
+        <Button variant="outline" className="flex items-center gap-2" disabled>
           <Download className="h-4 w-4" />
           Export
         </Button>
       </div>
 
-      {/* Filters */}
       <Card className="border-border">
         <CardContent className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {/* Search */}
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
             <div className="space-y-2">
               <Label htmlFor="search" className="text-sm">
                 Search
               </Label>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   id="search"
                   placeholder="Search transactions..."
@@ -64,7 +97,6 @@ export default function TransactionsPage() {
               </div>
             </div>
 
-            {/* Type Filter */}
             <div className="space-y-2">
               <Label htmlFor="type" className="text-sm">
                 Type
@@ -82,7 +114,6 @@ export default function TransactionsPage() {
               </Select>
             </div>
 
-            {/* Account Filter */}
             <div className="space-y-2">
               <Label htmlFor="account" className="text-sm">
                 Account
@@ -95,14 +126,13 @@ export default function TransactionsPage() {
                   <SelectItem value="all">All Accounts</SelectItem>
                   {accounts.map((acc) => (
                     <SelectItem key={acc.id} value={acc.id}>
-                      {acc.name}
+                      {acc.displayName}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Reset Button */}
             <div className="flex items-end">
               <Button
                 variant="outline"
@@ -120,53 +150,46 @@ export default function TransactionsPage() {
         </CardContent>
       </Card>
 
-      {/* Transactions Table */}
       <Card className="border-border">
         <CardHeader>
           <CardTitle>All Transactions</CardTitle>
           <CardDescription>
-            Showing {filteredTransactions.length} of {transactions.length} transactions
+            Showing {items.length} of {total} transaction{total === 1 ? '' : 's'}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-0">
-            {filteredTransactions.length > 0 ? (
-              <div className="hidden md:block overflow-x-auto">
+          {isLoading ? (
+            <p className="py-12 text-center text-sm text-muted-foreground">Loading transactions...</p>
+          ) : items.length > 0 ? (
+            <>
+              <div className="hidden overflow-x-auto md:block">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-border">
-                      <th className="text-left py-3 px-4 font-semibold text-sm">Description</th>
-                      <th className="text-left py-3 px-4 font-semibold text-sm">Date</th>
-                      <th className="text-left py-3 px-4 font-semibold text-sm">Type</th>
-                      <th className="text-right py-3 px-4 font-semibold text-sm">Amount</th>
-                      <th className="text-left py-3 px-4 font-semibold text-sm">Status</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold">Description</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold">Date</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold">Type</th>
+                      <th className="px-4 py-3 text-right text-sm font-semibold">Amount</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold">Status</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredTransactions.map((txn) => (
+                    {items.map((txn) => (
                       <tr
                         key={txn.id}
-                        className="border-b border-border hover:bg-muted/50 transition-colors"
+                        className="border-b border-border transition-colors hover:bg-muted/50"
                       >
-                        <td className="py-4 px-4">
+                        <td className="px-4 py-4">
                           <div>
-                            <p className="font-medium text-sm">{txn.description}</p>
+                            <p className="text-sm font-medium">{txn.description}</p>
                             <p className="text-xs text-muted-foreground">{txn.reference}</p>
                           </div>
                         </td>
-                        <td className="py-4 px-4 text-sm">
-                          {formatDate(txn.date)}
-                        </td>
-                        <td className="py-4 px-4">
+                        <td className="px-4 py-4 text-sm">{formatDate(new Date(txn.date))}</td>
+                        <td className="px-4 py-4">
                           <div className="flex items-center gap-2">
-                            <div
-                              className={`p-1.5 rounded ${
-                                txn.type === 'credit' || txn.type === 'transfer'
-                                  ? 'bg-green-500/10'
-                                  : 'bg-red-500/10'
-                              }`}
-                            >
-                              {txn.type === 'credit' || txn.type === 'transfer' ? (
+                            <div className={`rounded p-1.5 ${transactionIconClass(txn)}`}>
+                              {isIncomingTransaction(txn) ? (
                                 <ArrowDownLeft
                                   className={`h-4 w-4 ${
                                     txn.type === 'credit' ? 'text-green-600' : 'text-blue-600'
@@ -179,21 +202,15 @@ export default function TransactionsPage() {
                             <span className="text-sm capitalize">{txn.type}</span>
                           </div>
                         </td>
-                        <td className="py-4 px-4 text-right">
-                          <p
-                            className={`font-semibold text-sm ${
-                              txn.type === 'credit' || txn.type === 'transfer'
-                                ? 'text-green-600'
-                                : 'text-red-600'
-                            }`}
-                          >
-                            {txn.type === 'credit' || txn.type === 'transfer' ? '+' : '-'}
-                            {formatCurrency(txn.amount)}
+                        <td className="px-4 py-4 text-right">
+                          <p className={`text-sm font-semibold ${transactionAmountClass(txn)}`}>
+                            {transactionAmountPrefix(txn)}
+                            {formatCurrency(txn.amount, txn.currency)}
                           </p>
                         </td>
-                        <td className="py-4 px-4">
+                        <td className="px-4 py-4">
                           <div
-                            className={`inline-block px-2 py-1 rounded text-xs font-semibold capitalize ${
+                            className={`inline-block rounded px-2 py-1 text-xs font-semibold capitalize ${
                               txn.status === 'completed'
                                 ? 'bg-green-500/10 text-green-700'
                                 : txn.status === 'pending'
@@ -209,65 +226,50 @@ export default function TransactionsPage() {
                   </tbody>
                 </table>
               </div>
-            ) : (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground">No transactions found</p>
-              </div>
-            )}
 
-            {/* Mobile View */}
-            <div className="md:hidden space-y-3">
-              {filteredTransactions.map((txn) => (
-                <div
-                  key={txn.id}
-                  className="p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors"
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex items-start gap-3">
-                      <div
-                        className={`p-2 rounded-lg ${
-                          txn.type === 'credit' || txn.type === 'transfer'
-                            ? 'bg-green-500/10'
-                            : 'bg-red-500/10'
-                        }`}
-                      >
-                        {txn.type === 'credit' || txn.type === 'transfer' ? (
-                          <ArrowDownLeft
-                            className={`h-4 w-4 ${
-                              txn.type === 'credit' ? 'text-green-600' : 'text-blue-600'
-                            }`}
-                          />
-                        ) : (
-                          <ArrowUpRight className="h-4 w-4 text-red-600" />
-                        )}
+              <div className="space-y-3 md:hidden">
+                {items.map((txn) => (
+                  <div
+                    key={txn.id}
+                    className="rounded-lg border border-border p-4 transition-colors hover:bg-muted/50"
+                  >
+                    <div className="mb-2 flex items-start justify-between">
+                      <div className="flex items-start gap-3">
+                        <div className={`rounded-lg p-2 ${transactionIconClass(txn)}`}>
+                          {isIncomingTransaction(txn) ? (
+                            <ArrowDownLeft
+                              className={`h-4 w-4 ${
+                                txn.type === 'credit' ? 'text-green-600' : 'text-blue-600'
+                              }`}
+                            />
+                          ) : (
+                            <ArrowUpRight className="h-4 w-4 text-red-600" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">{txn.description}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatDate(new Date(txn.date))}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium text-sm">{txn.description}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {formatDate(txn.date)}
+                      <div className="text-right">
+                        <p className={`text-sm font-semibold ${transactionAmountClass(txn)}`}>
+                          {transactionAmountPrefix(txn)}
+                          {formatCurrency(txn.amount, txn.currency)}
                         </p>
+                        <p className="text-xs text-muted-foreground capitalize">{txn.status}</p>
                       </div>
-                    </div>
-                    <div className="text-right">
-                      <p
-                        className={`font-semibold text-sm ${
-                          txn.type === 'credit' || txn.type === 'transfer'
-                            ? 'text-green-600'
-                            : 'text-red-600'
-                        }`}
-                      >
-                        {txn.type === 'credit' || txn.type === 'transfer' ? '+' : '-'}
-                        {formatCurrency(txn.amount)}
-                      </p>
-                      <p className="text-xs text-muted-foreground capitalize">
-                        {txn.status}
-                      </p>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="py-12 text-center">
+              <p className="text-muted-foreground">No transactions found</p>
             </div>
-          </div>
+          )}
         </CardContent>
       </Card>
     </div>

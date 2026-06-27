@@ -21,6 +21,8 @@ function buildSearchParams(params: ListTransactionsParams): URLSearchParams {
   if (params.type) searchParams.set('type', params.type)
   if (params.search) searchParams.set('search', params.search.trim())
   if (params.sort) searchParams.set('sort', params.sort)
+  if (params.from) searchParams.set('from', params.from)
+  if (params.to) searchParams.set('to', params.to)
 
   return searchParams
 }

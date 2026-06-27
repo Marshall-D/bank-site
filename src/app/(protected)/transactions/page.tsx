@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { ArrowDownLeft, ArrowUpRight, Download, Search } from 'lucide-react'
+import { ArrowDownLeft, ArrowUpRight, Search } from 'lucide-react'
 
 import { useCustomerAuth } from '@/components/customer/CustomerAuthProvider'
 import { Button } from '@/components/ui/button'
@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { getDefaultExportDateRange } from '@/lib/exports/dateRange'
 import { fetchTransactions } from '@/lib/transactions/api'
 import {
   isIncomingTransaction,
@@ -25,11 +26,15 @@ import {
 import type { TransactionListItem } from '@/lib/transactions/types'
 import { formatCurrency, formatDate } from '@/lib/utils'
 
+const defaultDates = getDefaultExportDateRange()
+
 export default function TransactionsPage() {
   const { accounts, token } = useCustomerAuth()
   const [searchTerm, setSearchTerm] = useState('')
   const [filterType, setFilterType] = useState<string>('all')
   const [filterAccount, setFilterAccount] = useState<string>('all')
+  const [filterFrom, setFilterFrom] = useState(defaultDates.from)
+  const [filterTo, setFilterTo] = useState(defaultDates.to)
   const [items, setItems] = useState<TransactionListItem[]>([])
   const [total, setTotal] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
@@ -46,6 +51,8 @@ export default function TransactionsPage() {
         accountId: filterAccount === 'all' ? undefined : filterAccount,
         type: filterType,
         search: searchTerm.trim() || undefined,
+        from: filterFrom ? `${filterFrom}T00:00:00.000Z` : undefined,
+        to: filterTo ? `${filterTo}T23:59:59.999Z` : undefined,
       })
       setItems(result.items)
       setTotal(result.pagination.total)
@@ -55,7 +62,7 @@ export default function TransactionsPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [filterAccount, filterType, searchTerm, token])
+  }, [filterAccount, filterFrom, filterTo, filterType, searchTerm, token])
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -67,20 +74,14 @@ export default function TransactionsPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="mb-2 text-3xl font-bold">Transactions</h1>
-          <p className="text-muted-foreground">View and manage your transactions</p>
-        </div>
-        <Button variant="outline" className="flex items-center gap-2" disabled>
-          <Download className="h-4 w-4" />
-          Export
-        </Button>
+      <div>
+        <h1 className="mb-2 text-3xl font-bold">Transactions</h1>
+        <p className="text-muted-foreground">View and manage your transactions</p>
       </div>
 
       <Card className="border-border">
         <CardContent className="pt-6">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             <div className="space-y-2">
               <Label htmlFor="search" className="text-sm">
                 Search
@@ -133,14 +134,41 @@ export default function TransactionsPage() {
               </Select>
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="from" className="text-sm">
+                From
+              </Label>
+              <Input
+                id="from"
+                type="date"
+                value={filterFrom}
+                onChange={(e) => setFilterFrom(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="to" className="text-sm">
+                To
+              </Label>
+              <Input
+                id="to"
+                type="date"
+                value={filterTo}
+                onChange={(e) => setFilterTo(e.target.value)}
+              />
+            </div>
+
             <div className="flex items-end">
               <Button
                 variant="outline"
                 className="w-full"
                 onClick={() => {
+                  const dates = getDefaultExportDateRange()
                   setSearchTerm('')
                   setFilterType('all')
                   setFilterAccount('all')
+                  setFilterFrom(dates.from)
+                  setFilterTo(dates.to)
                 }}
               >
                 Reset Filters

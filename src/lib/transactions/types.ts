@@ -22,6 +22,8 @@ export type ListTransactionsParams = {
   type?: string
   search?: string
   sort?: string
+  from?: string
+  to?: string
 }
 
 export type PaginatedTransactionsResponse = {

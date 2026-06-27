@@ -291,7 +291,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent className="space-y-2">
               {[
-                { label: 'Statements', href: '#' },
+                { label: 'Statements', href: '/statements' },
                 { label: 'Security Center', href: '/settings' },
               ].map((link) => (
                 <Button

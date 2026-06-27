@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
+  FileText,
   LayoutDashboard,
   LogOut,
   Send,
@@ -25,6 +26,7 @@ export function DashboardSidebar() {
     { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { href: '/accounts', icon: Wallet, label: 'Accounts' },
     { href: '/transactions', icon: TrendingUp, label: 'Transactions' },
+    { href: '/statements', icon: FileText, label: 'Statements' },
     { href: '/transfer', icon: Send, label: 'Transfer' },
     { href: '/settings', icon: Settings, label: 'Settings' },
   ]

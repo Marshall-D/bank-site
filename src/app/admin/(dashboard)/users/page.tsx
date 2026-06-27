@@ -17,12 +17,19 @@ import { CheckCircle2, Clock, Search, XCircle } from 'lucide-react'
 import { useAdminAuth } from '@/components/admin/AdminAuthProvider'
 import { Badge } from '@/components/ui/badge'
 import { fetchAdminApplications } from '@/lib/admin/applications/api'
+import { fetchApplicationStatusCounts } from '@/lib/admin/applications/stats'
 import type { AdminApplicationListItem } from '@/lib/admin/applications/types'
 import { getAdminAuthErrorMessage } from '@/lib/admin/errors'
 import { APPLICATION_STATUS_LABELS } from '@/lib/application/statusLabels'
 import { formatDate } from '@/lib/utils'
 
-type QueueFilter = 'all' | 'submitted' | 'pending_review' | 'approved' | 'rejected'
+type QueueFilter =
+  | 'all'
+  | 'submitted'
+  | 'pending_review'
+  | 'need_more_info'
+  | 'approved'
+  | 'rejected'
 
 export default function AdminUsersPage() {
   const { token, logout } = useAdminAuth()
@@ -40,18 +47,8 @@ export default function AdminUsersPage() {
 
   const loadCounts = useCallback(async () => {
     if (!token) return
-    const [submittedRes, pendingRes, approvedRes, rejectedRes] = await Promise.all([
-      fetchAdminApplications(token, { status: 'submitted', limit: 1, page: 1 }),
-      fetchAdminApplications(token, { status: 'pending_review', limit: 1, page: 1 }),
-      fetchAdminApplications(token, { status: 'approved', limit: 1, page: 1 }),
-      fetchAdminApplications(token, { status: 'rejected', limit: 1, page: 1 }),
-    ])
-
-    setCounts({
-      pending: submittedRes.pagination.total + pendingRes.pagination.total,
-      approved: approvedRes.pagination.total,
-      rejected: rejectedRes.pagination.total,
-    })
+    const statusCounts = await fetchApplicationStatusCounts(token)
+    setCounts(statusCounts)
   }, [token])
 
   const loadQueue = useCallback(async () => {
@@ -183,6 +180,7 @@ export default function AdminUsersPage() {
                   <SelectItem value="all">All Status</SelectItem>
                   <SelectItem value="submitted">Submitted</SelectItem>
                   <SelectItem value="pending_review">Under review</SelectItem>
+                  <SelectItem value="need_more_info">More information needed</SelectItem>
                   <SelectItem value="approved">Approved</SelectItem>
                   <SelectItem value="rejected">Rejected</SelectItem>
                 </SelectContent>

@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { fetchAdminApplications } from '@/lib/admin/applications/api'
+import { fetchApplicationStatusCounts } from '@/lib/admin/applications/stats'
 import type { AdminApplicationListItem } from '@/lib/admin/applications/types'
 import { getAdminAuthErrorMessage } from '@/lib/admin/errors'
 import { APPLICATION_STATUS_LABELS } from '@/lib/application/statusLabels'
@@ -44,15 +45,15 @@ export default function AdminDashboardPage() {
     setError(null)
 
     try {
-      const [pendingReviewRes, submittedRes, approvedRes, rejectedRes] = await Promise.all([
+      const [pendingReviewRes, submittedRes, needMoreInfoRes, statusCounts] = await Promise.all([
         fetchAdminApplications(token, { status: 'pending_review', page: 1, limit: 5, sort: '-submittedAt' }),
         fetchAdminApplications(token, { status: 'submitted', page: 1, limit: 5, sort: '-submittedAt' }),
-        fetchAdminApplications(token, { status: 'approved', page: 1, limit: 1, sort: '-submittedAt' }),
-        fetchAdminApplications(token, { status: 'rejected', page: 1, limit: 1, sort: '-submittedAt' }),
+        fetchAdminApplications(token, { status: 'need_more_info', page: 1, limit: 5, sort: '-submittedAt' }),
+        fetchApplicationStatusCounts(token),
       ])
 
       const pendingById = new Map<string, AdminApplicationListItem>()
-      for (const item of [...submittedRes.items, ...pendingReviewRes.items]) {
+      for (const item of [...submittedRes.items, ...pendingReviewRes.items, ...needMoreInfoRes.items]) {
         pendingById.set(item.id, item)
       }
       const mergedPending = [...pendingById.values()]
@@ -65,9 +66,9 @@ export default function AdminDashboardPage() {
 
       setPendingItems(mergedPending)
       setStats({
-        pendingReviews: pendingReviewRes.pagination.total + submittedRes.pagination.total,
-        approvedApplications: approvedRes.pagination.total,
-        rejectedApplications: rejectedRes.pagination.total,
+        pendingReviews: statusCounts.pending,
+        approvedApplications: statusCounts.approved,
+        rejectedApplications: statusCounts.rejected,
       })
     } catch (err) {
       const message = getAdminAuthErrorMessage(err)
@@ -91,13 +92,13 @@ export default function AdminDashboardPage() {
         icon: Users,
         title: 'Approved Applications',
         value: stats.approvedApplications.toLocaleString(),
-        helper: 'Ready for account activation',
+        helper: 'Approved, awaiting activation, and active',
       },
       {
         icon: FileCheck,
         title: 'Pending KYC',
         value: stats.pendingReviews.toLocaleString(),
-        helper: 'Requires review',
+        helper: 'Submitted, under review, or awaiting more info',
         highlight: true,
       },
       {

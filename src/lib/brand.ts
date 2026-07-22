@@ -1,12 +1,10 @@
 export const BRAND_NAME = "British Royal Caribbean Bank";
 export const BRAND_SHORT = "BRCB";
-export const BRAND_DOMAIN = "thebrcbank.com";
+export const BRAND_DOMAIN = "thebrcb.com";
 export const BRAND_WEBSITE = `https://${BRAND_DOMAIN}`;
 
 export const BRAND_EMAILS = {
   support: `support@${BRAND_DOMAIN}`,
-  privacy: `privacy@${BRAND_DOMAIN}`,
-  legal: `legal@${BRAND_DOMAIN}`,
 } as const;
 
 export const BRAND_BANK_DETAILS = {

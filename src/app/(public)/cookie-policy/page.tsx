@@ -134,8 +134,8 @@ export default function CookiePolicyPage() {
       <LegalSection title="8. Contact">
         <p>
           Questions about our use of cookies may be sent to{' '}
-          <a href={`mailto:${BRAND_EMAILS.privacy}`} className="text-primary hover:underline">
-            {BRAND_EMAILS.privacy}
+          <a href={`mailto:${BRAND_EMAILS.support}`} className="text-primary hover:underline">
+            {BRAND_EMAILS.support}
           </a>{' '}
           or via our{' '}
           <Link href="/support" className="text-primary hover:underline">

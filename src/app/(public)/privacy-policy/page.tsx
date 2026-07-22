@@ -138,8 +138,8 @@ export default function PrivacyPolicyPage() {
       <LegalSection title="11. Contact us">
         <p>
           For privacy-related questions or requests, contact our Data Protection team at{' '}
-          <a href={`mailto:${BRAND_EMAILS.privacy}`} className="text-primary hover:underline">
-            {BRAND_EMAILS.privacy}
+          <a href={`mailto:${BRAND_EMAILS.support}`} className="text-primary hover:underline">
+            {BRAND_EMAILS.support}
           </a>{' '}
           or write to {BRAND_NAME}, Privacy Office, P.O. Box 1200, Bridgetown, Barbados. You may also
           reach our support team through our{' '}

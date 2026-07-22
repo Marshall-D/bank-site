@@ -145,8 +145,8 @@ export default function TermsOfServicePage() {
       <LegalSection title="14. Contact">
         <p>
           Questions about these Terms may be directed to{' '}
-          <a href={`mailto:${BRAND_EMAILS.legal}`} className="text-primary hover:underline">
-            {BRAND_EMAILS.legal}
+          <a href={`mailto:${BRAND_EMAILS.support}`} className="text-primary hover:underline">
+            {BRAND_EMAILS.support}
           </a>{' '}
           or through our{' '}
           <Link href="/support" className="text-primary hover:underline">

@@ -249,7 +249,7 @@ export default function AdminUsersPage() {
                         </td>
                         <td className="py-4 px-4">
                           <Button size="sm" asChild>
-                            <Link href={`/admin/applications/${user.id}`}>Review</Link>
+                            <Link href={`/admin/applications/detail?id=${user.id}`}>Review</Link>
                           </Button>
                         </td>
                       </tr>
@@ -284,7 +284,7 @@ export default function AdminUsersPage() {
                     <span>{user.submittedAt ? formatDate(new Date(user.submittedAt)) : '—'}</span>
                   </div>
                   <Button size="sm" className="w-full" asChild>
-                    <Link href={`/admin/applications/${user.id}`}>Review KYC</Link>
+                    <Link href={`/admin/applications/detail?id=${user.id}`}>Review KYC</Link>
                   </Button>
                 </div>
               ))}

@@ -353,7 +353,7 @@ export default function AdminApplicationsPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <Button size="sm" variant="outline" asChild>
-                          <Link href={`/admin/applications/${item.id}`}>Review</Link>
+                          <Link href={`/admin/applications/detail?id=${item.id}`}>Review</Link>
                         </Button>
                       </TableCell>
                     </TableRow>

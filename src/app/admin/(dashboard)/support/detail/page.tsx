@@ -1,8 +1,8 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 
 import { useAdminAuth } from '@/components/admin/AdminAuthProvider'
 import { Badge } from '@/components/ui/badge'
@@ -30,15 +30,15 @@ function statusBadgeVariant(status: string): 'default' | 'secondary' | 'outline'
   return 'outline'
 }
 
-export default function AdminSupportDetailPage() {
-  const params = useParams<{ id: string }>()
+function AdminSupportDetailContent() {
+  const searchParams = useSearchParams()
   const { token, logout } = useAdminAuth()
   const [item, setItem] = useState<SupportMessageDetail | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isUpdating, setIsUpdating] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const messageId = params?.id
+  const messageId = searchParams.get('id')
 
   const loadMessage = useCallback(async () => {
     if (!token || !messageId) return
@@ -62,8 +62,14 @@ export default function AdminSupportDetailPage() {
   }, [logout, messageId, token])
 
   useEffect(() => {
+    if (!messageId) {
+      setIsLoading(false)
+      setError('Missing message id.')
+      setItem(null)
+      return
+    }
     loadMessage()
-  }, [loadMessage])
+  }, [loadMessage, messageId])
 
   const handleStatusChange = async (status: string) => {
     if (!token || !messageId) return
@@ -160,5 +166,17 @@ export default function AdminSupportDetailPage() {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+export default function AdminSupportDetailPage() {
+  return (
+    <Suspense
+      fallback={
+        <p className="py-8 text-center text-sm text-muted-foreground">Loading message...</p>
+      }
+    >
+      <AdminSupportDetailContent />
+    </Suspense>
   )
 }

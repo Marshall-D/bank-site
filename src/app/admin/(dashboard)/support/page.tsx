@@ -196,7 +196,7 @@ export default function AdminSupportPage() {
                       <TableCell>{formatDate(new Date(item.createdAt))}</TableCell>
                       <TableCell className="text-right">
                         <Button size="sm" variant="outline" asChild>
-                          <Link href={`/admin/support/${item.id}`}>View</Link>
+                          <Link href={`/admin/support/detail?id=${item.id}`}>View</Link>
                         </Button>
                       </TableCell>
                     </TableRow>

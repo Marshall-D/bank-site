@@ -1,8 +1,8 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import { useAdminAuth } from '@/components/admin/AdminAuthProvider'
 import { ApplicationDocumentCard } from '@/components/admin/ApplicationDocumentCard'
 import { ApplicationReviewDialog } from '@/components/admin/ApplicationReviewDialog'
@@ -54,8 +54,8 @@ function isReviewableStatus(status: string) {
   return status === 'submitted' || status === 'pending_review'
 }
 
-export default function AdminApplicationDetailPage() {
-  const params = useParams<{ id: string }>()
+function AdminApplicationDetailContent() {
+  const searchParams = useSearchParams()
   const { token, logout } = useAdminAuth()
   const [item, setItem] = useState<AdminApplicationDetail | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -63,7 +63,7 @@ export default function AdminApplicationDetailPage() {
   const [reviewAction, setReviewAction] = useState<ReviewAction | null>(null)
   const [isReviewing, setIsReviewing] = useState(false)
 
-  const applicationId = params?.id
+  const applicationId = searchParams.get('id')
 
   const loadApplication = useCallback(async () => {
     if (!token || !applicationId) return
@@ -89,8 +89,14 @@ export default function AdminApplicationDetailPage() {
   }, [applicationId, logout, token])
 
   useEffect(() => {
+    if (!applicationId) {
+      setIsLoading(false)
+      setError('Missing application id.')
+      setItem(null)
+      return
+    }
     loadApplication()
-  }, [loadApplication])
+  }, [applicationId, loadApplication])
 
   const handleReviewConfirm = async (notes: string) => {
     if (!token || !applicationId || !reviewAction) return
@@ -511,5 +517,17 @@ export default function AdminApplicationDetailPage() {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+export default function AdminApplicationDetailPage() {
+  return (
+    <Suspense
+      fallback={
+        <p className="py-8 text-center text-sm text-muted-foreground">Loading application...</p>
+      }
+    >
+      <AdminApplicationDetailContent />
+    </Suspense>
   )
 }

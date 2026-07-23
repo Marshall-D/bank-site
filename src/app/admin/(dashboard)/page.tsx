@@ -188,7 +188,7 @@ export default function AdminDashboardPage() {
                           {APPLICATION_STATUS_LABELS[item.status] || item.status}
                         </Badge>
                         <Button size="sm" variant="outline" asChild>
-                          <Link href={`/admin/applications/${item.id}`}>Review</Link>
+                          <Link href={`/admin/applications/detail?id=${item.id}`}>Review</Link>
                         </Button>
                       </div>
                     </div>

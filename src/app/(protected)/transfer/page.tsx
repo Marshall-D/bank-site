@@ -24,6 +24,7 @@ import { Textarea } from '@/components/ui/textarea'
 import type { CustomerAccountSummary } from '@/lib/auth/types'
 import { fetchBeneficiaries, deleteBeneficiary } from '@/lib/beneficiaries/api'
 import type { Beneficiary } from '@/lib/beneficiaries/types'
+import { getCustomerAuthErrorMessage } from '@/lib/auth/errors'
 import { submitExternalTransfer, submitInternalTransfer } from '@/lib/transfers/api'
 import { OUTSIDE_JURISDICTION_MESSAGE, TRANSFER_LIMITS } from '@/lib/transfers/constants'
 import { getTransferErrorMessage } from '@/lib/transfers/errors'
@@ -69,7 +70,9 @@ export default function TransferPage() {
   const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([])
   const [beneficiariesLoading, setBeneficiariesLoading] = useState(false)
   const [addBeneficiaryOpen, setAddBeneficiaryOpen] = useState(false)
-  const [deletingBeneficiaryId, setDeletingBeneficiaryId] = useState<string | null>(null)
+  const [deletingBeneficiaryIds, setDeletingBeneficiaryIds] = useState<Set<string>>(
+    () => new Set()
+  )
 
   const sourceAccount = accounts.find((acc) => acc.id === formData.sourceAccount)
   const destinationAccount = accounts.find((acc) => acc.id === formData.destinationAccount)
@@ -170,8 +173,9 @@ export default function TransferPage() {
 
   const handleDeleteBeneficiary = async (beneficiaryId: string) => {
     if (!token) return
+    if (deletingBeneficiaryIds.has(beneficiaryId)) return
 
-    setDeletingBeneficiaryId(beneficiaryId)
+    setDeletingBeneficiaryIds((prev) => new Set(prev).add(beneficiaryId))
     setBeneficiaryError(null)
 
     try {
@@ -181,9 +185,13 @@ export default function TransferPage() {
         prev.beneficiary === beneficiaryId ? { ...prev, beneficiary: '' } : prev
       )
     } catch (error) {
-      setBeneficiaryError(getTransferErrorMessage(error) || 'Could not delete beneficiary')
+      setBeneficiaryError(getCustomerAuthErrorMessage(error) || 'Could not delete beneficiary')
     } finally {
-      setDeletingBeneficiaryId(null)
+      setDeletingBeneficiaryIds((prev) => {
+        const next = new Set(prev)
+        next.delete(beneficiaryId)
+        return next
+      })
     }
   }
 

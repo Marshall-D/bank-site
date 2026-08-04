@@ -1,4 +1,10 @@
-import { BENEFICIARY_FIELD_LIMITS, UNSAFE_TEXT_PATTERN } from './constants'
+import {
+  BENEFICIARY_ACCOUNT_NUMBER_PATTERN,
+  BENEFICIARY_BANK_NAME_PATTERN,
+  BENEFICIARY_FIELD_LIMITS,
+  BENEFICIARY_NAME_PATTERN,
+  UNSAFE_TEXT_PATTERN,
+} from './constants'
 import type { CreateBeneficiaryPayload } from './types'
 
 export type BeneficiaryFormErrors = Partial<Record<keyof CreateBeneficiaryPayload, string>>
@@ -14,27 +20,39 @@ export function validateBeneficiaryForm(values: CreateBeneficiaryPayload): Benef
   const accountNumber = values.accountNumber.trim()
 
   if (!name) {
-    errors.name = 'Name is required'
+    errors.name = 'Account name is required'
+  } else if (name.length < BENEFICIARY_FIELD_LIMITS.nameMin) {
+    errors.name = `Account name must be at least ${BENEFICIARY_FIELD_LIMITS.nameMin} characters`
   } else if (name.length > BENEFICIARY_FIELD_LIMITS.nameMax) {
-    errors.name = `Name must be at most ${BENEFICIARY_FIELD_LIMITS.nameMax} characters`
+    errors.name = `Account name must be at most ${BENEFICIARY_FIELD_LIMITS.nameMax} characters`
+  } else if (!BENEFICIARY_NAME_PATTERN.test(name)) {
+    errors.name =
+      'Account name may only include letters, spaces, hyphens, apostrophes, and periods'
   } else if (hasUnsafeText(name)) {
-    errors.name = 'Name contains disallowed content'
+    errors.name = 'Account name contains disallowed content'
   }
 
   if (!bankName) {
     errors.bankName = 'Bank name is required'
+  } else if (bankName.length < BENEFICIARY_FIELD_LIMITS.bankNameMin) {
+    errors.bankName = `Bank name must be at least ${BENEFICIARY_FIELD_LIMITS.bankNameMin} characters`
   } else if (bankName.length > BENEFICIARY_FIELD_LIMITS.bankNameMax) {
     errors.bankName = `Bank name must be at most ${BENEFICIARY_FIELD_LIMITS.bankNameMax} characters`
+  } else if (!BENEFICIARY_BANK_NAME_PATTERN.test(bankName)) {
+    errors.bankName =
+      'Bank name may only include letters, numbers, spaces, &, hyphens, apostrophes, and periods'
   } else if (hasUnsafeText(bankName)) {
     errors.bankName = 'Bank name contains disallowed content'
   }
 
   if (!accountNumber) {
     errors.accountNumber = 'Account number is required'
+  } else if (!BENEFICIARY_ACCOUNT_NUMBER_PATTERN.test(accountNumber)) {
+    errors.accountNumber = 'Account number must contain digits only'
   } else if (accountNumber.length < BENEFICIARY_FIELD_LIMITS.accountNumberMin) {
-    errors.accountNumber = `Account number must be at least ${BENEFICIARY_FIELD_LIMITS.accountNumberMin} characters`
+    errors.accountNumber = `Account number must be at least ${BENEFICIARY_FIELD_LIMITS.accountNumberMin} digits`
   } else if (accountNumber.length > BENEFICIARY_FIELD_LIMITS.accountNumberMax) {
-    errors.accountNumber = `Account number must be at most ${BENEFICIARY_FIELD_LIMITS.accountNumberMax} characters`
+    errors.accountNumber = `Account number must be at most ${BENEFICIARY_FIELD_LIMITS.accountNumberMax} digits`
   }
 
   return errors

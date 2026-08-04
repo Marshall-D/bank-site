@@ -100,12 +100,13 @@ export function AddBeneficiaryDialog({
 
         <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           <div className="space-y-2">
-            <Label htmlFor="beneficiary-name">Full name</Label>
+            <Label htmlFor="beneficiary-name">Account name</Label>
             <Input
               id="beneficiary-name"
               value={form.name}
               onChange={(e) => updateField('name', e.target.value)}
               maxLength={BENEFICIARY_FIELD_LIMITS.nameMax}
+              placeholder="Jane Doe"
               disabled={isSubmitting}
               required
             />
@@ -119,6 +120,7 @@ export function AddBeneficiaryDialog({
               value={form.bankName}
               onChange={(e) => updateField('bankName', e.target.value)}
               maxLength={BENEFICIARY_FIELD_LIMITS.bankNameMax}
+              placeholder="Chase Bank"
               disabled={isSubmitting}
               required
             />
@@ -132,8 +134,13 @@ export function AddBeneficiaryDialog({
             <Input
               id="beneficiary-account"
               value={form.accountNumber}
-              onChange={(e) => updateField('accountNumber', e.target.value)}
+              onChange={(e) =>
+                updateField('accountNumber', e.target.value.replace(/\D/g, ''))
+              }
+              inputMode="numeric"
+              pattern="[0-9]*"
               maxLength={BENEFICIARY_FIELD_LIMITS.accountNumberMax}
+              placeholder="Digits only"
               disabled={isSubmitting}
               required
             />

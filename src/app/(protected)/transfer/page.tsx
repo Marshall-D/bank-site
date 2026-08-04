@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { AlertCircle, ArrowRight, CheckCircle2, Loader2, Plus } from 'lucide-react'
+import { AlertCircle, ArrowRight, CheckCircle2, Loader2, Plus, Trash2 } from 'lucide-react'
 
 import { AddBeneficiaryDialog } from '@/components/customer/AddBeneficiaryDialog'
 import { useCustomerAuth } from '@/components/customer/CustomerAuthProvider'
@@ -22,7 +22,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import type { CustomerAccountSummary } from '@/lib/auth/types'
-import { fetchBeneficiaries } from '@/lib/beneficiaries/api'
+import { fetchBeneficiaries, deleteBeneficiary } from '@/lib/beneficiaries/api'
 import type { Beneficiary } from '@/lib/beneficiaries/types'
 import { submitExternalTransfer, submitInternalTransfer } from '@/lib/transfers/api'
 import { OUTSIDE_JURISDICTION_MESSAGE, TRANSFER_LIMITS } from '@/lib/transfers/constants'
@@ -68,6 +68,7 @@ export default function TransferPage() {
   const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([])
   const [beneficiariesLoading, setBeneficiariesLoading] = useState(false)
   const [addBeneficiaryOpen, setAddBeneficiaryOpen] = useState(false)
+  const [deletingBeneficiaryId, setDeletingBeneficiaryId] = useState<string | null>(null)
 
   const sourceAccount = accounts.find((acc) => acc.id === formData.sourceAccount)
   const destinationAccount = accounts.find((acc) => acc.id === formData.destinationAccount)
@@ -163,6 +164,25 @@ export default function TransferPage() {
     setSuccessReference(null)
     setSubmitError(null)
     setExternalError(null)
+  }
+
+  const handleDeleteBeneficiary = async (beneficiaryId: string) => {
+    if (!token) return
+
+    setDeletingBeneficiaryId(beneficiaryId)
+    setSubmitError(null)
+
+    try {
+      await deleteBeneficiary(token, beneficiaryId)
+      setBeneficiaries((prev) => prev.filter((ben) => ben.id !== beneficiaryId))
+      setFormData((prev) =>
+        prev.beneficiary === beneficiaryId ? { ...prev, beneficiary: '' } : prev
+      )
+    } catch (error) {
+      setSubmitError(getTransferErrorMessage(error) || 'Could not delete beneficiary')
+    } finally {
+      setDeletingBeneficiaryId(null)
+    }
   }
 
   const confirmTransfer = async () => {
@@ -484,21 +504,43 @@ export default function TransferPage() {
                     </div>
                   ) : (
                     beneficiaries.map((ben) => (
-                      <button
+                      <div
                         key={ben.id}
-                        type="button"
-                        onClick={() => setFormData({ ...formData, beneficiary: ben.id })}
-                        className={`w-full rounded-lg border-2 p-4 text-left transition-colors ${
+                        className={`flex items-stretch gap-2 rounded-lg border-2 transition-colors ${
                           formData.beneficiary === ben.id
                             ? 'border-primary bg-primary/5'
                             : 'border-border hover:border-primary/50'
                         }`}
                       >
-                        <p className="font-semibold">{ben.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {ben.bankName} · {ben.accountNumberMasked}
-                        </p>
-                      </button>
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ ...formData, beneficiary: ben.id })}
+                          className="min-w-0 flex-1 p-4 text-left"
+                        >
+                          <p className="font-semibold">{ben.name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {ben.bankName} · {ben.accountNumberMasked}
+                          </p>
+                        </button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="m-2 shrink-0 text-muted-foreground hover:text-destructive"
+                          aria-label={`Delete ${ben.name}`}
+                          disabled={deletingBeneficiaryId === ben.id || !token}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            void handleDeleteBeneficiary(ben.id)
+                          }}
+                        >
+                          {deletingBeneficiaryId === ben.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
                     ))
                   )}
                 </div>

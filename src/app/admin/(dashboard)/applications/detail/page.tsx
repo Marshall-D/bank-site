@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { toast } from '@/hooks/use-toast'
-import { fetchAdminApplicationById, reviewAdminApplication } from '@/lib/admin/applications/api'
+import { fetchAdminApplicationById, reviewAdminApplication, confirmAdminInitialDeposit } from '@/lib/admin/applications/api'
 import {
   formatAccountType,
   formatAddress,
@@ -62,6 +62,7 @@ function AdminApplicationDetailContent() {
   const [error, setError] = useState<string | null>(null)
   const [reviewAction, setReviewAction] = useState<ReviewAction | null>(null)
   const [isReviewing, setIsReviewing] = useState(false)
+  const [isConfirmingDeposit, setIsConfirmingDeposit] = useState(false)
 
   const applicationId = searchParams.get('id')
 
@@ -111,7 +112,7 @@ function AdminApplicationDetailContent() {
       if (reviewAction === 'approve' && result.account) {
         toast({
           title: 'Application approved',
-          description: `Customer account ${result.account.accountNumberMasked} created. Activation invite logged (email stub).`,
+          description: `Customer account ${result.account.accountNumberMasked} created with pending initial deposit. Activation invite logged (email stub).`,
         })
       } else if (reviewAction === 'reject') {
         toast({ title: 'Application rejected' })
@@ -129,6 +130,28 @@ function AdminApplicationDetailContent() {
       })
     } finally {
       setIsReviewing(false)
+    }
+  }
+
+  const handleConfirmInitialDeposit = async () => {
+    if (!token || !applicationId) return
+
+    setIsConfirmingDeposit(true)
+    try {
+      const result = await confirmAdminInitialDeposit(token, applicationId)
+      toast({
+        title: 'Initial deposit confirmed',
+        description: `Credited ${formatCurrencyAmount(result.transaction.amount, result.transaction.currency)}. New balance ${formatCurrencyAmount(result.account.balance, result.account.currency)}.`,
+      })
+      await loadApplication()
+    } catch (err) {
+      toast({
+        title: 'Could not confirm deposit',
+        description: getAdminAuthErrorMessage(err),
+        variant: 'destructive',
+      })
+    } finally {
+      setIsConfirmingDeposit(false)
     }
   }
 
@@ -226,6 +249,25 @@ function AdminApplicationDetailContent() {
               value={formatCurrencyAmount(item.account.balance, item.account.currency)}
             />
             <DetailField label="Account status" value={item.account.status} />
+            {item.account.initialDeposit && (
+              <>
+                <DetailField
+                  label="Initial deposit status"
+                  value={item.account.initialDeposit.status}
+                />
+                <DetailField
+                  label="Initial deposit amount"
+                  value={
+                    item.account.initialDeposit.amount != null
+                      ? formatCurrencyAmount(
+                          item.account.initialDeposit.amount,
+                          item.account.initialDeposit.currency || item.account.currency
+                        )
+                      : '—'
+                  }
+                />
+              </>
+            )}
             {item.customer && (
               <>
                 <DetailField label="Customer email" value={item.customer.email} />
@@ -242,6 +284,21 @@ function AdminApplicationDetailContent() {
               />
             )}
           </CardContent>
+          {item.account.initialDeposit?.status === 'pending' && (
+            <CardContent className="pt-0">
+              <Button
+                type="button"
+                onClick={handleConfirmInitialDeposit}
+                disabled={isConfirmingDeposit}
+              >
+                {isConfirmingDeposit ? 'Confirming...' : 'Confirm initial deposit'}
+              </Button>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Confirm only after the customer&apos;s opening payment has been received. This
+                credits the account balance and unlocks transfers.
+              </p>
+            </CardContent>
+          )}
           <CardContent className="pt-0">
             <p className="text-xs text-muted-foreground">
               Activation email is stubbed until the email service is connected. Tokens are never

@@ -36,6 +36,13 @@ export type CustomerAccountSummary = {
   balance: number
   status: string
   openedAt: string | null
+  initialDeposit?: {
+    status: 'pending' | 'confirmed' | 'waived' | string
+    amount: number | null
+    currency: string
+    method: string | null
+    confirmedAt: string | null
+  }
 }
 
 export type CustomerMeResponse = {

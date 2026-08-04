@@ -7,6 +7,7 @@ import type {
   ApiSuccessResponse,
   ListApplicationsParams,
   PaginatedApplicationsResponse,
+  ProvisionedAccount,
   ReviewApplicationPayload,
   ReviewApplicationResponse,
 } from './types'
@@ -86,6 +87,51 @@ export async function reviewAdminApplication(
 
   const data = (await response.json()) as
     | ApiSuccessResponse<ReviewApplicationResponse>
+    | ApiErrorResponse
+
+  if (!response.ok || !data.success) {
+    throw new AdminAuthError(data as ApiErrorResponse)
+  }
+
+  return data.data
+}
+
+export async function confirmAdminInitialDeposit(
+  token: string,
+  applicationId: string
+): Promise<{
+  applicationId: string
+  applicationReference: string
+  account: ProvisionedAccount
+  transaction: {
+    reference: string
+    amount: number
+    currency: string
+    balanceAfter: number
+  }
+  confirmedAt: string
+}> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/v1/admin/applications/${applicationId}/confirm-initial-deposit`,
+    {
+      method: 'POST',
+      headers: authHeaders(token),
+    }
+  )
+
+  const data = (await response.json()) as
+    | ApiSuccessResponse<{
+        applicationId: string
+        applicationReference: string
+        account: ProvisionedAccount
+        transaction: {
+          reference: string
+          amount: number
+          currency: string
+          balanceAfter: number
+        }
+        confirmedAt: string
+      }>
     | ApiErrorResponse
 
   if (!response.ok || !data.success) {

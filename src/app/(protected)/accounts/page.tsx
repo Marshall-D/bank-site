@@ -5,7 +5,10 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useCustomerAuth } from '@/components/customer/CustomerAuthProvider'
+import { InitialDepositPaymentModal } from '@/components/customer/InitialDepositPaymentModal'
+import { InitialDepositPendingBanner } from '@/components/customer/InitialDepositPendingBanner'
 import { ReceiveMoneyModal } from '@/components/customer/ReceiveMoneyModal'
+import { isInitialDepositPending } from '@/lib/customer/initialDeposit'
 import { formatCurrency, formatDate } from '@/lib/utils'
 
 function formatAccountStatus(status: string) {
@@ -16,12 +19,14 @@ function formatAccountStatus(status: string) {
 }
 
 export default function AccountsPage() {
-  const { accounts, user } = useCustomerAuth()
+  const { accounts, user, application } = useCustomerAuth()
   const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0)
   const primaryCurrency = accounts[0]?.currency ?? 'USD'
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null)
+  const [initialDepositOpen, setInitialDepositOpen] = useState(false)
 
   const selectedAccount = accounts.find((account) => account.id === selectedAccountId) ?? null
+  const pendingDepositAccount = accounts.find((account) => isInitialDepositPending(account))
 
   return (
     <div className="space-y-8">
@@ -29,6 +34,13 @@ export default function AccountsPage() {
         <h1 className="text-3xl font-bold mb-2">Accounts</h1>
         <p className="text-muted-foreground">Manage your accounts</p>
       </div>
+
+      {pendingDepositAccount && (
+        <InitialDepositPendingBanner
+          account={pendingDepositAccount}
+          onViewPaymentDetails={() => setInitialDepositOpen(true)}
+        />
+      )}
 
       <Card className="bg-gradient-to-br from-secondary to-secondary/50 border-0">
         <CardContent className="pt-6">
@@ -86,9 +98,21 @@ export default function AccountsPage() {
                 )}
 
                 <div className="flex gap-2 pt-2">
-                  <Button size="sm" variant="default" className="flex-1" asChild>
-                    <Link href="/transfer">Transfer</Link>
-                  </Button>
+                  {isInitialDepositPending(account) ? (
+                    <Button
+                      size="sm"
+                      variant="default"
+                      className="flex-1"
+                      type="button"
+                      onClick={() => setInitialDepositOpen(true)}
+                    >
+                      Transfer
+                    </Button>
+                  ) : (
+                    <Button size="sm" variant="default" className="flex-1" asChild>
+                      <Link href="/transfer">Transfer</Link>
+                    </Button>
+                  )}
                   <Button size="sm" variant="outline" className="flex-1" onClick={() => setSelectedAccountId(account.id)}>
                     Deposit
                   </Button>
@@ -140,6 +164,14 @@ export default function AccountsPage() {
         }}
         account={selectedAccount}
         accountHolderName={user?.name || 'Account holder'}
+      />
+
+      <InitialDepositPaymentModal
+        open={initialDepositOpen}
+        onOpenChange={setInitialDepositOpen}
+        account={pendingDepositAccount ?? null}
+        accountHolderName={user?.name || 'Account holder'}
+        paymentReference={application?.applicationReference}
       />
     </div>
   )

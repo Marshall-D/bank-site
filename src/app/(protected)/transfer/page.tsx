@@ -6,6 +6,8 @@ import { AlertCircle, ArrowRight, CheckCircle2, Loader2, Plus } from 'lucide-rea
 
 import { AddBeneficiaryDialog } from '@/components/customer/AddBeneficiaryDialog'
 import { useCustomerAuth } from '@/components/customer/CustomerAuthProvider'
+import { InitialDepositPaymentModal } from '@/components/customer/InitialDepositPaymentModal'
+import { InitialDepositPendingBanner } from '@/components/customer/InitialDepositPendingBanner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -25,6 +27,7 @@ import type { Beneficiary } from '@/lib/beneficiaries/types'
 import { submitExternalTransfer, submitInternalTransfer } from '@/lib/transfers/api'
 import { OUTSIDE_JURISDICTION_MESSAGE, TRANSFER_LIMITS } from '@/lib/transfers/constants'
 import { getTransferErrorMessage } from '@/lib/transfers/errors'
+import { isInitialDepositPending } from '@/lib/customer/initialDeposit'
 import { formatCurrency } from '@/lib/utils'
 
 type TransferStep = 'source' | 'destination' | 'amount' | 'review' | 'success'
@@ -40,9 +43,12 @@ function formatAccountType(accountType: string) {
 }
 
 export default function TransferPage() {
-  const { accounts, token, refreshSession } = useCustomerAuth()
+  const { accounts, token, refreshSession, user, application } = useCustomerAuth()
   const hasMultipleAccounts = accounts.length > 1
   const hasOnlyOneAccount = accounts.length === 1
+  const pendingDepositAccount = accounts.find((account) => isInitialDepositPending(account))
+  const transfersLocked = Boolean(pendingDepositAccount)
+  const [initialDepositOpen, setInitialDepositOpen] = useState(false)
 
   const [step, setStep] = useState<TransferStep>('source')
   const [formData, setFormData] = useState({
@@ -161,6 +167,11 @@ export default function TransferPage() {
 
   const confirmTransfer = async () => {
     if (!token || !sourceAccount) return
+    if (isInitialDepositPending(sourceAccount)) {
+      setSubmitError('Transfers are unavailable until your initial deposit is confirmed')
+      setShowConfirmation(false)
+      return
+    }
 
     const amount = parseFloat(formData.amount)
     setShowConfirmation(false)
@@ -294,6 +305,38 @@ export default function TransferPage() {
             No accounts are linked to your profile yet.
           </CardContent>
         </Card>
+      </div>
+    )
+  }
+
+  if (transfersLocked && pendingDepositAccount) {
+    return (
+      <div className="space-y-8">
+        <div>
+          <h1 className="mb-2 text-3xl font-bold">Transfer Funds</h1>
+          <p className="text-muted-foreground">Send money to your accounts or beneficiaries</p>
+        </div>
+        <InitialDepositPendingBanner
+          account={pendingDepositAccount}
+          onViewPaymentDetails={() => setInitialDepositOpen(true)}
+        />
+        <Card className="max-w-2xl border-border">
+          <CardContent className="space-y-4 py-8">
+            <p className="text-sm text-muted-foreground">
+              Transfers are blocked until your opening deposit is confirmed by the bank.
+            </p>
+            <Button type="button" onClick={() => setInitialDepositOpen(true)}>
+              View payment details
+            </Button>
+          </CardContent>
+        </Card>
+        <InitialDepositPaymentModal
+          open={initialDepositOpen}
+          onOpenChange={setInitialDepositOpen}
+          account={pendingDepositAccount}
+          accountHolderName={user?.name || 'Account holder'}
+          paymentReference={application?.applicationReference}
+        />
       </div>
     )
   }

@@ -7,8 +7,11 @@ import { ArrowUpRight, ArrowDownLeft, Send, Download, TrendingUp, AlertCircle, S
 import Link from 'next/link'
 import { useCustomerAuth } from '@/components/customer/CustomerAuthProvider'
 import { ComingSoonDialog } from '@/components/customer/ComingSoonDialog'
+import { InitialDepositPaymentModal } from '@/components/customer/InitialDepositPaymentModal'
+import { InitialDepositPendingBanner } from '@/components/customer/InitialDepositPendingBanner'
 import { ReceiveMoneyModal } from '@/components/customer/ReceiveMoneyModal'
 import { APPLICATION_STATUS_LABELS } from '@/lib/application/statusLabels'
+import { isInitialDepositPending } from '@/lib/customer/initialDeposit'
 import { fetchTransactions } from '@/lib/transactions/api'
 import {
   isIncomingTransaction,
@@ -34,7 +37,10 @@ export default function DashboardPage() {
   const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0)
   const memberSince = application?.activatedAt || primaryAccount?.openedAt
   const [receiveMoneyOpen, setReceiveMoneyOpen] = useState(false)
+  const [initialDepositOpen, setInitialDepositOpen] = useState(false)
   const [comingSoonFeature, setComingSoonFeature] = useState<string | null>(null)
+  const pendingDepositAccount = accounts.find((account) => isInitialDepositPending(account))
+  const transfersLocked = Boolean(pendingDepositAccount)
 
   useEffect(() => {
     if (!token) {
@@ -81,6 +87,13 @@ export default function DashboardPage() {
         <p className="text-muted-foreground">Manage and monitor your finances</p>
       </div>
 
+      {pendingDepositAccount && (
+        <InitialDepositPendingBanner
+          account={pendingDepositAccount}
+          onViewPaymentDetails={() => setInitialDepositOpen(true)}
+        />
+      )}
+
       <Card className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground border-0">
         <CardContent className="pt-6">
           <p className="text-primary-foreground/80 text-sm mb-2">Total Balance</p>
@@ -107,6 +120,21 @@ export default function DashboardPage() {
           const isLink = action.label === 'Transfer'
 
           if (isLink && action.href) {
+            if (transfersLocked) {
+              return (
+                <Button
+                  key={action.label}
+                  variant="outline"
+                  className="flex-col gap-2 h-auto py-4"
+                  type="button"
+                  onClick={() => setInitialDepositOpen(true)}
+                >
+                  <Icon className="h-5 w-5" />
+                  <span className="text-xs">{action.label}</span>
+                </Button>
+              )
+            }
+
             return (
               <Button
                 key={action.label}
@@ -160,9 +188,15 @@ export default function DashboardPage() {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <Button size="sm" variant="default" asChild>
-                      <Link href="/transfer">Transfer</Link>
-                    </Button>
+                    {transfersLocked ? (
+                      <Button size="sm" variant="default" type="button" onClick={() => setInitialDepositOpen(true)}>
+                        Transfer
+                      </Button>
+                    ) : (
+                      <Button size="sm" variant="default" asChild>
+                        <Link href="/transfer">Transfer</Link>
+                      </Button>
+                    )}
                     <Button size="sm" variant="outline" asChild>
                       <Link href="/accounts">View Details</Link>
                     </Button>
@@ -313,6 +347,14 @@ export default function DashboardPage() {
         onOpenChange={setReceiveMoneyOpen}
         account={primaryAccount ?? null}
         accountHolderName={user?.name || 'Account holder'}
+      />
+
+      <InitialDepositPaymentModal
+        open={initialDepositOpen}
+        onOpenChange={setInitialDepositOpen}
+        account={pendingDepositAccount ?? null}
+        accountHolderName={user?.name || 'Account holder'}
+        paymentReference={application?.applicationReference}
       />
 
       <ComingSoonDialog

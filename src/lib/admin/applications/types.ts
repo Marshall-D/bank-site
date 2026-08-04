@@ -43,6 +43,13 @@ export type ProvisionedAccount = {
   currency: string
   status: string
   openedAt: string
+  initialDeposit?: {
+    status: string
+    amount: number | null
+    currency: string
+    method: string | null
+    confirmedAt: string | null
+  }
 }
 
 export type ActivationSummary = {

@@ -538,13 +538,13 @@ export default function TransferPage() {
                           size="icon"
                           className="m-2 shrink-0 text-muted-foreground hover:text-destructive"
                           aria-label={`Delete ${ben.name}`}
-                          disabled={deletingBeneficiaryId === ben.id || !token}
+                          disabled={deletingBeneficiaryIds.has(ben.id) || !token}
                           onClick={(e) => {
                             e.stopPropagation()
                             void handleDeleteBeneficiary(ben.id)
                           }}
                         >
-                          {deletingBeneficiaryId === ben.id ? (
+                          {deletingBeneficiaryIds.has(ben.id) ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
                           ) : (
                             <Trash2 className="h-4 w-4" />

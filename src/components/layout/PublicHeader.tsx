@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Logo } from '@/components/brand/Logo'
 import { Button } from '@/components/ui/button'
+import { cn, pathsMatch } from '@/lib/utils'
 import { Menu, X } from 'lucide-react'
 import { useState } from 'react'
 
@@ -18,6 +19,16 @@ export function PublicHeader() {
     { href: '/support', label: 'Support' },
   ]
 
+  const isActive = (href: string) => pathsMatch(pathname, href)
+
+  const navLinkClass = (href: string) =>
+    cn(
+      'rounded-md px-3 py-2 text-sm font-medium transition-colors',
+      isActive(href)
+        ? 'bg-primary text-primary-foreground'
+        : 'text-foreground hover:bg-muted active:bg-muted'
+    )
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <nav className="container flex h-32 items-center justify-between px-4">
@@ -29,11 +40,8 @@ export function PublicHeader() {
             <Link
               key={item.href}
               href={item.href}
-              className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                pathname === item.href
-                  ? 'bg-primary/10 text-primary'
-                  : 'text-foreground hover:bg-muted'
-              }`}
+              aria-current={isActive(item.href) ? 'page' : undefined}
+              className={navLinkClass(item.href)}
             >
               {item.label}
             </Link>
@@ -55,6 +63,7 @@ export function PublicHeader() {
           onClick={() => setIsMenuOpen(!isMenuOpen)}
           className="md:hidden"
           aria-label="Toggle menu"
+          aria-expanded={isMenuOpen}
         >
           {isMenuOpen ? (
             <X className="h-6 w-6" />
@@ -71,17 +80,14 @@ export function PublicHeader() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    pathname === item.href
-                      ? 'bg-primary/10 text-primary'
-                      : 'text-foreground hover:bg-muted'
-                  }`}
+                  aria-current={isActive(item.href) ? 'page' : undefined}
+                  className={navLinkClass(item.href)}
                   onClick={() => setIsMenuOpen(false)}
                 >
                   {item.label}
                 </Link>
               ))}
-              <div className="flex flex-col gap-2 pt-4 border-t border-border">
+              <div className="flex flex-col gap-2 border-t border-border pt-4">
                 <Button variant="outline" className="w-full" asChild>
                   <Link href="/login" onClick={() => setIsMenuOpen(false)}>
                     Login

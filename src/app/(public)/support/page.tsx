@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import { useState } from 'react'
-import { ChevronDown, ChevronUp, Mail, Phone } from 'lucide-react'
+import { ChevronDown, ChevronUp, Mail } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -129,37 +129,26 @@ export default function SupportPage() {
 
       <section className="py-20 sm:py-32">
         <div className="container mx-auto max-w-4xl px-4">
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-            {[
-              {
-                icon: Mail,
-                title: 'Email',
-                description: 'Response within 2 hours',
-                contact: BRAND_EMAILS.support,
-              },
-              {
-                icon: Phone,
-                title: 'Phone',
-                description: 'Available 24/7',
-                contact: '+1 (800) 272-2253',
-              },
-            ].map((method) => {
-              const Icon = method.icon
-              return (
-                <Card key={method.title} className="border-border text-center">
-                  <CardContent className="pt-6">
-                    <div className="mb-4 flex justify-center">
-                      <div className="rounded-lg bg-primary/10 p-3">
-                        <Icon className="h-6 w-6 text-primary" />
-                      </div>
-                    </div>
-                    <h3 className="mb-2 text-lg font-semibold">{method.title}</h3>
-                    <p className="mb-4 text-sm text-muted-foreground">{method.description}</p>
-                    <p className="font-medium text-primary">{method.contact}</p>
-                  </CardContent>
-                </Card>
-              )
-            })}
+          <div className="mx-auto max-w-md">
+            <Card className="border-border text-center">
+              <CardContent className="pt-6">
+                <div className="mb-4 flex justify-center">
+                  <div className="rounded-lg bg-primary/10 p-3">
+                    <Mail className="h-6 w-6 text-primary" />
+                  </div>
+                </div>
+                <h3 className="mb-2 text-lg font-semibold">Email</h3>
+                <p className="mb-4 text-sm text-muted-foreground">
+                  Our preferred contact method — response within 2 hours
+                </p>
+                <a
+                  href={`mailto:${BRAND_EMAILS.support}`}
+                  className="font-medium text-primary hover:underline"
+                >
+                  {BRAND_EMAILS.support}
+                </a>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>

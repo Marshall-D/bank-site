@@ -16,6 +16,7 @@ import { Logo } from '@/components/brand/Logo'
 import { Button } from '@/components/ui/button'
 import { useCustomerAuth } from '@/components/customer/CustomerAuthProvider'
 import { useDashboardNav } from '@/components/layout/dashboard-nav'
+import { cn, pathsMatch } from '@/lib/utils'
 
 export function DashboardSidebar() {
   const pathname = usePathname()
@@ -31,7 +32,7 @@ export function DashboardSidebar() {
     { href: '/settings', icon: Settings, label: 'Settings' },
   ]
 
-  const isActive = (href: string) => pathname === href
+  const isActive = (href: string) => pathsMatch(pathname, href)
 
   return (
     <>
@@ -53,11 +54,13 @@ export function DashboardSidebar() {
                   key={item.href}
                   href={item.href}
                   onClick={close}
-                  className={`flex items-center gap-3 rounded-lg px-4 py-3 font-medium transition-colors ${
+                  aria-current={isActive(item.href) ? 'page' : undefined}
+                  className={cn(
+                    'flex items-center gap-3 rounded-lg px-4 py-3 font-medium transition-colors',
                     isActive(item.href)
-                      ? 'bg-sidebar-primary text-sidebar-primary-foreground'
-                      : 'text-sidebar-foreground hover:bg-sidebar-accent'
-                  }`}
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-sidebar-foreground hover:bg-sidebar-accent active:bg-sidebar-accent'
+                  )}
                 >
                   <Icon className="h-5 w-5" />
                   <span>{item.label}</span>

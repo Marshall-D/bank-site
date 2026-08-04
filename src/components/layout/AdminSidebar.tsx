@@ -8,6 +8,7 @@ import { Logo } from '@/components/brand/Logo'
 import { Button } from '@/components/ui/button'
 import { useDashboardNav } from '@/components/layout/dashboard-nav'
 import { useAdminAuth } from '@/components/admin/AdminAuthProvider'
+import { cn, normalizePathname, pathStartsWith } from '@/lib/utils'
 
 export function AdminSidebar() {
   const pathname = usePathname()
@@ -22,8 +23,13 @@ export function AdminSidebar() {
     { href: '/admin/settings', icon: Settings, label: 'Settings' },
   ]
 
-  const isActive = (href: string) =>
-    href === '/admin' ? pathname === href : pathname.startsWith(href)
+  const isActive = (href: string) => {
+    const target = normalizePathname(href)
+    if (target === '/admin') {
+      return normalizePathname(pathname) === '/admin'
+    }
+    return pathStartsWith(pathname, href)
+  }
 
   return (
     <>
@@ -45,11 +51,13 @@ export function AdminSidebar() {
                   key={item.href}
                   href={item.href}
                   onClick={close}
-                  className={`flex items-center gap-3 rounded-lg px-4 py-3 font-medium transition-colors ${
+                  aria-current={isActive(item.href) ? 'page' : undefined}
+                  className={cn(
+                    'flex items-center gap-3 rounded-lg px-4 py-3 font-medium transition-colors',
                     isActive(item.href)
-                      ? 'bg-sidebar-primary text-sidebar-primary-foreground'
-                      : 'text-sidebar-foreground hover:bg-sidebar-accent'
-                  }`}
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-sidebar-foreground hover:bg-sidebar-accent active:bg-sidebar-accent'
+                  )}
                 >
                   <Icon className="h-5 w-5" />
                   <span>{item.label}</span>

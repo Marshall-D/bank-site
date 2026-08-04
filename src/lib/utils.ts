@@ -5,6 +5,25 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+/** Normalize paths for comparison when `trailingSlash: true` (e.g. `/dashboard/` vs `/dashboard`). */
+export function normalizePathname(path: string): string {
+  if (!path) return '/'
+  if (path.length > 1 && path.endsWith('/')) {
+    return path.slice(0, -1)
+  }
+  return path
+}
+
+export function pathsMatch(pathname: string, href: string): boolean {
+  return normalizePathname(pathname) === normalizePathname(href)
+}
+
+export function pathStartsWith(pathname: string, href: string): boolean {
+  const current = normalizePathname(pathname)
+  const prefix = normalizePathname(href)
+  return current === prefix || current.startsWith(`${prefix}/`)
+}
+
 export function formatCurrency(amount: number, currency: string = 'USD'): string {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',

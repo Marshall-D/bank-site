@@ -63,6 +63,7 @@ export default function TransferPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isProcessingExternal, setIsProcessingExternal] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [beneficiaryError, setBeneficiaryError] = useState<string | null>(null)
   const [externalError, setExternalError] = useState<string | null>(null)
   const [successReference, setSuccessReference] = useState<string | null>(null)
   const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([])
@@ -163,6 +164,7 @@ export default function TransferPage() {
     })
     setSuccessReference(null)
     setSubmitError(null)
+    setBeneficiaryError(null)
     setExternalError(null)
   }
 
@@ -170,7 +172,7 @@ export default function TransferPage() {
     if (!token) return
 
     setDeletingBeneficiaryId(beneficiaryId)
-    setSubmitError(null)
+    setBeneficiaryError(null)
 
     try {
       await deleteBeneficiary(token, beneficiaryId)
@@ -179,7 +181,7 @@ export default function TransferPage() {
         prev.beneficiary === beneficiaryId ? { ...prev, beneficiary: '' } : prev
       )
     } catch (error) {
-      setSubmitError(getTransferErrorMessage(error) || 'Could not delete beneficiary')
+      setBeneficiaryError(getTransferErrorMessage(error) || 'Could not delete beneficiary')
     } finally {
       setDeletingBeneficiaryId(null)
     }
@@ -422,14 +424,15 @@ export default function TransferPage() {
                 <button
                   type="button"
                   disabled={!hasMultipleAccounts}
-                  onClick={() =>
+                  onClick={() => {
+                    setBeneficiaryError(null)
                     setFormData({
                       ...formData,
                       destinationType: 'internal',
                       destinationAccount: '',
                       beneficiary: '',
                     })
-                  }
+                  }}
                   className={`rounded-lg border-2 p-4 font-medium transition-colors ${
                     formData.destinationType === 'internal'
                       ? 'border-primary bg-primary/5'
@@ -440,14 +443,15 @@ export default function TransferPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() =>
+                  onClick={() => {
+                    setBeneficiaryError(null)
                     setFormData({
                       ...formData,
                       destinationType: 'external',
                       destinationAccount: '',
                       beneficiary: '',
                     })
-                  }
+                  }}
                   className={`rounded-lg border-2 p-4 font-medium transition-colors ${
                     formData.destinationType === 'external'
                       ? 'border-primary bg-primary/5'
@@ -492,6 +496,12 @@ export default function TransferPage() {
                       Add beneficiary
                     </Button>
                   </div>
+
+                  {beneficiaryError && (
+                    <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+                      {beneficiaryError}
+                    </div>
+                  )}
 
                   {beneficiariesLoading ? (
                     <p className="rounded-lg border border-border bg-muted/50 p-4 text-sm text-muted-foreground">

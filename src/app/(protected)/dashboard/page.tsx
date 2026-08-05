@@ -53,8 +53,16 @@ export default function DashboardPage() {
     async function loadDashboard() {
       setTransactionsLoading(true)
       try {
-        await refreshSession()
-        const result = await fetchTransactions(token!, { page: 1, limit: 5, sort: '-createdAt' })
+        const accessToken = (await refreshSession()) || token
+        if (!accessToken) {
+          if (!cancelled) setRecentTransactions([])
+          return
+        }
+        const result = await fetchTransactions(accessToken, {
+          page: 1,
+          limit: 5,
+          sort: '-createdAt',
+        })
         if (!cancelled) setRecentTransactions(result.items)
       } catch {
         if (!cancelled) setRecentTransactions([])

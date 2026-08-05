@@ -44,8 +44,13 @@ export default function TransactionsPage() {
 
     setIsLoading(true)
     try {
-      await refreshSession()
-      const result = await fetchTransactions(token, {
+      const accessToken = (await refreshSession()) || token
+      if (!accessToken) {
+        setItems([])
+        setTotal(0)
+        return
+      }
+      const result = await fetchTransactions(accessToken, {
         page: 1,
         limit: 100,
         sort: '-createdAt',

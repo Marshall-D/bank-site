@@ -1,8 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { KeyRound, Mail, Shield } from 'lucide-react'
+import { KeyRound, Shield } from 'lucide-react'
 
+import { TransferPinSettingsCard } from '@/components/customer/TransferPinSettingsCard'
 import { useCustomerAuth } from '@/components/customer/CustomerAuthProvider'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -130,35 +131,7 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-border">
-            <CardHeader>
-              <CardTitle>Two-Factor Authentication</CardTitle>
-              <CardDescription>Email verification is required when signing in</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-center justify-between rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-900 dark:bg-green-950/20">
-                <div className="flex items-center gap-3">
-                  <Mail className="h-5 w-5 text-green-600" />
-                  <div>
-                    <p className="text-sm font-semibold">Email verification</p>
-                    <p className="text-xs text-muted-foreground">
-                      Enabled for {user?.email || 'your email'}
-                    </p>
-                  </div>
-                </div>
-                <div className="rounded bg-green-600 px-3 py-1 text-xs font-semibold text-white">
-                  Enabled
-                </div>
-              </div>
-
-              <div className="rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-900 dark:bg-green-950/20">
-                <p className="text-sm text-green-900 dark:text-green-100">
-                  Two-factor authentication is active. Sign-in verification codes are sent to your
-                  registered email address.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          <TransferPinSettingsCard />
         </TabsContent>
       </Tabs>
     </div>

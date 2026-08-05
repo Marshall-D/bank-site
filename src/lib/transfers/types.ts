@@ -2,6 +2,7 @@ export type InternalTransferPayload = {
   fromAccountId: string
   toAccountId: string
   amount: number
+  transferPin: string
   description?: string
 }
 
@@ -11,6 +12,7 @@ export type ExternalTransferPayload = {
   beneficiaryBank: string
   beneficiaryAccountNumber: string
   amount: number
+  transferPin: string
   description?: string
 }
 
@@ -18,6 +20,7 @@ export type SameBankTransferPayload = {
   fromAccountId: string
   toAccountNumber: string
   amount: number
+  transferPin: string
   description?: string
 }
 
@@ -76,6 +79,8 @@ export type ApiErrorResponse = {
   message: string
   code: string
   reference?: string
+  lockedUntil?: string
+  attemptsRemaining?: number
   errors?: ApiFieldError[]
 }
 

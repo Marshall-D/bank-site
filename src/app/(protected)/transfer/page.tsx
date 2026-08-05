@@ -19,6 +19,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import type { CustomerAccountSummary } from '@/lib/auth/types'
@@ -46,6 +47,7 @@ type TransferStep = 'source' | 'destination' | 'amount' | 'review' | 'success'
 type DestinationType = 'internal' | 'same_bank' | 'external'
 
 const PROCESSING_DELAY_MS = 2200
+const TRANSFER_PIN_LENGTH = 6
 
 function formatAccountType(accountType: string) {
   return accountType
@@ -60,6 +62,7 @@ export default function TransferPage() {
   const hasOnlyOneAccount = accounts.length === 1
   const pendingDepositAccount = accounts.find((account) => isInitialDepositPending(account))
   const transfersLocked = Boolean(pendingDepositAccount)
+  const hasTransferPin = Boolean(user?.hasTransferPin)
   const [initialDepositOpen, setInitialDepositOpen] = useState(false)
 
   const [step, setStep] = useState<TransferStep>('source')
@@ -72,6 +75,7 @@ export default function TransferPage() {
     amount: '',
     description: '',
   })
+  const [transferPin, setTransferPin] = useState('')
   const [resolvedBrcb, setResolvedBrcb] = useState<ResolvedBrcbAccount | null>(null)
   const [resolveError, setResolveError] = useState<string | null>(null)
   const [isResolving, setIsResolving] = useState(false)
@@ -194,6 +198,7 @@ export default function TransferPage() {
     setSubmitError(null)
     setBeneficiaryError(null)
     setExternalError(null)
+    setTransferPin('')
   }
 
   const handleResolveBrcbAccount = async () => {
@@ -251,6 +256,12 @@ export default function TransferPage() {
     }
 
     const amount = parseFloat(formData.amount)
+    if (transferPin.length !== TRANSFER_PIN_LENGTH) {
+      setSubmitError(`Enter your ${TRANSFER_PIN_LENGTH}-digit transfer PIN`)
+      setShowConfirmation(false)
+      return
+    }
+
     setShowConfirmation(false)
     setSubmitError(null)
     setExternalError(null)
@@ -265,9 +276,11 @@ export default function TransferPage() {
           fromAccountId: sourceAccount.id,
           toAccountId: destinationAccount.id,
           amount,
+          transferPin,
           description: formData.description.trim() || undefined,
         })
         await refreshSession()
+        setTransferPin('')
         setSuccessReference(result.reference)
         setStep('success')
       } catch (error) {
@@ -290,9 +303,11 @@ export default function TransferPage() {
           fromAccountId: sourceAccount.id,
           toAccountNumber: formData.brcbAccountNumber.trim(),
           amount,
+          transferPin,
           description: formData.description.trim() || undefined,
         })
         await refreshSession()
+        setTransferPin('')
         setSuccessReference(result.reference)
         setStep('success')
       } catch (error) {
@@ -318,6 +333,7 @@ export default function TransferPage() {
         beneficiaryBank: selectedBeneficiary.bankName,
         beneficiaryAccountNumber: selectedBeneficiary.accountNumber,
         amount,
+        transferPin,
         description: formData.description.trim() || undefined,
       })
     } catch (error) {
@@ -443,6 +459,32 @@ export default function TransferPage() {
           accountHolderName={user?.name || 'Account holder'}
           paymentReference={application?.applicationReference}
         />
+      </div>
+    )
+  }
+
+  if (!hasTransferPin) {
+    return (
+      <div className="space-y-8">
+        <div>
+          <h1 className="mb-2 text-3xl font-bold">Transfer Funds</h1>
+          <p className="text-muted-foreground">
+            Send money to your accounts, other {BRAND_SHORT} customers, or other-bank beneficiaries
+          </p>
+        </div>
+        <Card className="max-w-2xl border-border">
+          <CardHeader>
+            <CardTitle>Transfer PIN required</CardTitle>
+            <CardDescription>
+              Set a 6-digit transfer PIN in Settings before you can send money.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild>
+              <Link href="/settings">Go to Settings</Link>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     )
   }
@@ -827,7 +869,14 @@ export default function TransferPage() {
               </Button>
             )}
             {step === 'review' && (
-              <Button onClick={() => setShowConfirmation(true)} disabled={isSubmitting} className="flex-1">
+              <Button
+                onClick={() => {
+                  setTransferPin('')
+                  setShowConfirmation(true)
+                }}
+                disabled={isSubmitting}
+                className="flex-1"
+              >
                 Confirm Transfer
               </Button>
             )}
@@ -835,12 +884,18 @@ export default function TransferPage() {
         </CardContent>
       </Card>
 
-      <Dialog open={showConfirmation} onOpenChange={setShowConfirmation}>
+      <Dialog
+        open={showConfirmation}
+        onOpenChange={(open) => {
+          setShowConfirmation(open)
+          if (!open) setTransferPin('')
+        }}
+      >
         <DialogContent className="border-border">
           <DialogHeader>
             <DialogTitle>Confirm Transfer</DialogTitle>
             <DialogDescription>
-              Please confirm this transfer of{' '}
+              Enter your transfer PIN to confirm{' '}
               {formatCurrency(parseFloat(formData.amount) || 0, sourceAccount?.currency)}
             </DialogDescription>
           </DialogHeader>
@@ -852,6 +907,21 @@ export default function TransferPage() {
                 Amount: {formatCurrency(parseFloat(formData.amount) || 0, sourceAccount?.currency)}
               </p>
             </div>
+            <div className="space-y-2">
+              <Label>Transfer PIN</Label>
+              <InputOTP
+                maxLength={TRANSFER_PIN_LENGTH}
+                value={transferPin}
+                onChange={setTransferPin}
+                disabled={isSubmitting || isProcessingTransfer}
+              >
+                <InputOTPGroup>
+                  {Array.from({ length: TRANSFER_PIN_LENGTH }).map((_, index) => (
+                    <InputOTPSlot key={index} index={index} />
+                  ))}
+                </InputOTPGroup>
+              </InputOTP>
+            </div>
           </div>
           <DialogFooter>
             <Button
@@ -861,7 +931,14 @@ export default function TransferPage() {
             >
               Cancel
             </Button>
-            <Button onClick={confirmTransfer} disabled={isSubmitting || isProcessingTransfer}>
+            <Button
+              onClick={confirmTransfer}
+              disabled={
+                isSubmitting ||
+                isProcessingTransfer ||
+                transferPin.length !== TRANSFER_PIN_LENGTH
+              }
+            >
               {isSubmitting || isProcessingTransfer ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

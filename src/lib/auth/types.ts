@@ -3,6 +3,7 @@ export type CustomerUser = {
   name: string
   email: string
   role: 'customer' | 'admin'
+  hasTransferPin?: boolean
 }
 
 export type LoginPayload = {

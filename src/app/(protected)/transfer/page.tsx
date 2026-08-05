@@ -533,11 +533,13 @@ export default function TransferPage() {
                   onClick={() => {
                     setBeneficiaryError(null)
                     setResolveError(null)
+                    setResolvedBrcb(null)
                     setFormData({
                       ...formData,
                       destinationType: 'same_bank',
                       destinationAccount: '',
                       beneficiary: '',
+                      brcbAccountNumber: '',
                     })
                   }}
                   className={`rounded-lg border-2 p-4 font-medium transition-colors ${

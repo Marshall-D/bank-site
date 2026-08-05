@@ -25,14 +25,25 @@ import type { CustomerAccountSummary } from '@/lib/auth/types'
 import { fetchBeneficiaries, deleteBeneficiary } from '@/lib/beneficiaries/api'
 import type { Beneficiary } from '@/lib/beneficiaries/types'
 import { getCustomerAuthErrorMessage } from '@/lib/auth/errors'
-import { submitExternalTransfer, submitInternalTransfer } from '@/lib/transfers/api'
-import { OUTSIDE_JURISDICTION_MESSAGE, TRANSFER_LIMITS } from '@/lib/transfers/constants'
+import { BRAND_SHORT } from '@/lib/brand'
+import {
+  resolveBrcbAccount,
+  submitExternalTransfer,
+  submitInternalTransfer,
+  submitSameBankTransfer,
+} from '@/lib/transfers/api'
+import {
+  BRCB_ACCOUNT_NUMBER_LENGTH,
+  OUTSIDE_JURISDICTION_MESSAGE,
+  TRANSFER_LIMITS,
+} from '@/lib/transfers/constants'
 import { getTransferErrorMessage } from '@/lib/transfers/errors'
+import type { ResolvedBrcbAccount } from '@/lib/transfers/types'
 import { isInitialDepositPending } from '@/lib/customer/initialDeposit'
 import { formatCurrency } from '@/lib/utils'
 
 type TransferStep = 'source' | 'destination' | 'amount' | 'review' | 'success'
-type DestinationType = 'internal' | 'external'
+type DestinationType = 'internal' | 'same_bank' | 'external'
 
 const PROCESSING_DELAY_MS = 2200
 
@@ -57,12 +68,16 @@ export default function TransferPage() {
     destinationType: 'internal' as DestinationType,
     destinationAccount: '',
     beneficiary: '',
+    brcbAccountNumber: '',
     amount: '',
     description: '',
   })
+  const [resolvedBrcb, setResolvedBrcb] = useState<ResolvedBrcbAccount | null>(null)
+  const [resolveError, setResolveError] = useState<string | null>(null)
+  const [isResolving, setIsResolving] = useState(false)
   const [showConfirmation, setShowConfirmation] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isProcessingExternal, setIsProcessingExternal] = useState(false)
+  const [isProcessingTransfer, setIsProcessingTransfer] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [beneficiaryError, setBeneficiaryError] = useState<string | null>(null)
   const [externalError, setExternalError] = useState<string | null>(null)
@@ -82,8 +97,12 @@ export default function TransferPage() {
     if (formData.destinationType === 'internal') {
       return destinationAccount?.displayName || '—'
     }
+    if (formData.destinationType === 'same_bank') {
+      if (!resolvedBrcb) return '—'
+      return `${resolvedBrcb.accountHolderName} (${resolvedBrcb.accountNumberMasked})`
+    }
     return selectedBeneficiary?.name || '—'
-  }, [destinationAccount, formData.destinationType, selectedBeneficiary])
+  }, [destinationAccount, formData.destinationType, resolvedBrcb, selectedBeneficiary])
 
   useEffect(() => {
     if (!token) return
@@ -110,20 +129,23 @@ export default function TransferPage() {
   }, [token])
 
   useEffect(() => {
-    if (step === 'destination' && hasOnlyOneAccount) {
+    if (step === 'destination' && hasOnlyOneAccount && formData.destinationType === 'internal') {
       setFormData((prev) => ({
         ...prev,
-        destinationType: 'external',
+        destinationType: 'same_bank',
         destinationAccount: '',
       }))
     }
-  }, [hasOnlyOneAccount, step])
+  }, [hasOnlyOneAccount, step, formData.destinationType])
 
   const canProceed = () => {
     if (step === 'source') return !!formData.sourceAccount
     if (step === 'destination') {
       if (formData.destinationType === 'internal') {
         return hasMultipleAccounts && !!formData.destinationAccount
+      }
+      if (formData.destinationType === 'same_bank') {
+        return Boolean(resolvedBrcb)
       }
       return !!formData.beneficiary
     }
@@ -162,13 +184,38 @@ export default function TransferPage() {
       destinationType: 'internal',
       destinationAccount: '',
       beneficiary: '',
+      brcbAccountNumber: '',
       amount: '',
       description: '',
     })
+    setResolvedBrcb(null)
+    setResolveError(null)
     setSuccessReference(null)
     setSubmitError(null)
     setBeneficiaryError(null)
     setExternalError(null)
+  }
+
+  const handleResolveBrcbAccount = async () => {
+    if (!token) return
+    const accountNumber = formData.brcbAccountNumber.trim()
+    if (!/^\d{12}$/.test(accountNumber)) {
+      setResolveError(`Enter a ${BRCB_ACCOUNT_NUMBER_LENGTH}-digit ${BRAND_SHORT} account number`)
+      setResolvedBrcb(null)
+      return
+    }
+
+    setIsResolving(true)
+    setResolveError(null)
+    try {
+      const account = await resolveBrcbAccount(token, accountNumber)
+      setResolvedBrcb(account)
+    } catch (error) {
+      setResolvedBrcb(null)
+      setResolveError(getTransferErrorMessage(error))
+    } finally {
+      setIsResolving(false)
+    }
   }
 
   const handleDeleteBeneficiary = async (beneficiaryId: string) => {
@@ -212,6 +259,7 @@ export default function TransferPage() {
       if (!destinationAccount) return
 
       setIsSubmitting(true)
+      setIsProcessingTransfer(true)
       try {
         const result = await submitInternalTransfer(token, {
           fromAccountId: sourceAccount.id,
@@ -226,6 +274,32 @@ export default function TransferPage() {
         setSubmitError(getTransferErrorMessage(error))
         setStep('review')
       } finally {
+        setIsProcessingTransfer(false)
+        setIsSubmitting(false)
+      }
+      return
+    }
+
+    if (formData.destinationType === 'same_bank') {
+      if (!resolvedBrcb) return
+
+      setIsSubmitting(true)
+      setIsProcessingTransfer(true)
+      try {
+        const result = await submitSameBankTransfer(token, {
+          fromAccountId: sourceAccount.id,
+          toAccountNumber: formData.brcbAccountNumber.trim(),
+          amount,
+          description: formData.description.trim() || undefined,
+        })
+        await refreshSession()
+        setSuccessReference(result.reference)
+        setStep('success')
+      } catch (error) {
+        setSubmitError(getTransferErrorMessage(error))
+        setStep('review')
+      } finally {
+        setIsProcessingTransfer(false)
         setIsSubmitting(false)
       }
       return
@@ -233,7 +307,8 @@ export default function TransferPage() {
 
     if (!selectedBeneficiary) return
 
-    setIsProcessingExternal(true)
+    setIsSubmitting(true)
+    setIsProcessingTransfer(true)
     await new Promise((resolve) => window.setTimeout(resolve, PROCESSING_DELAY_MS))
 
     try {
@@ -249,7 +324,8 @@ export default function TransferPage() {
       setExternalError(getTransferErrorMessage(error) || OUTSIDE_JURISDICTION_MESSAGE)
       setStep('review')
     } finally {
-      setIsProcessingExternal(false)
+      setIsProcessingTransfer(false)
+      setIsSubmitting(false)
     }
   }
 
@@ -428,17 +504,20 @@ export default function TransferPage() {
 
           {step === 'destination' && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <button
                   type="button"
                   disabled={!hasMultipleAccounts}
                   onClick={() => {
                     setBeneficiaryError(null)
+                    setResolveError(null)
+                    setResolvedBrcb(null)
                     setFormData({
                       ...formData,
                       destinationType: 'internal',
                       destinationAccount: '',
                       beneficiary: '',
+                      brcbAccountNumber: '',
                     })
                   }}
                   className={`rounded-lg border-2 p-4 font-medium transition-colors ${
@@ -453,11 +532,34 @@ export default function TransferPage() {
                   type="button"
                   onClick={() => {
                     setBeneficiaryError(null)
+                    setResolveError(null)
+                    setFormData({
+                      ...formData,
+                      destinationType: 'same_bank',
+                      destinationAccount: '',
+                      beneficiary: '',
+                    })
+                  }}
+                  className={`rounded-lg border-2 p-4 font-medium transition-colors ${
+                    formData.destinationType === 'same_bank'
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border hover:border-primary/50'
+                  }`}
+                >
+                  {BRAND_SHORT} customer
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBeneficiaryError(null)
+                    setResolveError(null)
+                    setResolvedBrcb(null)
                     setFormData({
                       ...formData,
                       destinationType: 'external',
                       destinationAccount: '',
                       beneficiary: '',
+                      brcbAccountNumber: '',
                     })
                   }}
                   className={`rounded-lg border-2 p-4 font-medium transition-colors ${
@@ -466,7 +568,7 @@ export default function TransferPage() {
                       : 'border-border hover:border-primary/50'
                   }`}
                 >
-                  Beneficiaries
+                  Other banks
                 </button>
               </div>
 
@@ -485,10 +587,68 @@ export default function TransferPage() {
                   </div>
                 ) : (
                   <div className="rounded-lg border border-border bg-muted/50 p-4 text-sm text-muted-foreground">
-                    Internal transfers are unavailable because you only have one account. Add another
-                    account or send to an external beneficiary instead.
+                    Internal transfers are unavailable because you only have one account. Send to
+                    another {BRAND_SHORT} customer or an other-bank beneficiary instead.
                   </div>
                 )
+              ) : formData.destinationType === 'same_bank' ? (
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    Instant transfers to another {BRAND_SHORT} account. Enter their 12-digit account
+                    number to confirm the recipient.
+                  </p>
+                  <div className="space-y-2">
+                    <Label htmlFor="brcbAccountNumber">Account number</Label>
+                    <div className="flex flex-col gap-2 sm:flex-row">
+                      <Input
+                        id="brcbAccountNumber"
+                        inputMode="numeric"
+                        autoComplete="off"
+                        placeholder="e.g. 202605880115"
+                        value={formData.brcbAccountNumber}
+                        onChange={(e) => {
+                          const digits = e.target.value.replace(/\D/g, '').slice(0, BRCB_ACCOUNT_NUMBER_LENGTH)
+                          setResolvedBrcb(null)
+                          setResolveError(null)
+                          setFormData({ ...formData, brcbAccountNumber: digits })
+                        }}
+                        maxLength={BRCB_ACCOUNT_NUMBER_LENGTH}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => void handleResolveBrcbAccount()}
+                        disabled={isResolving || !token || formData.brcbAccountNumber.length !== BRCB_ACCOUNT_NUMBER_LENGTH}
+                      >
+                        {isResolving ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Looking up...
+                          </>
+                        ) : (
+                          'Look up'
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+
+                  {resolveError && (
+                    <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+                      {resolveError}
+                    </div>
+                  )}
+
+                  {resolvedBrcb && (
+                    <div className="rounded-lg border border-primary/30 bg-primary/5 p-4">
+                      <p className="text-sm text-muted-foreground">Recipient confirmed</p>
+                      <p className="font-semibold">{resolvedBrcb.accountHolderName}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {resolvedBrcb.displayName} · {resolvedBrcb.accountNumberMasked} ·{' '}
+                        {resolvedBrcb.currency}
+                      </p>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <div className="space-y-3">
                   <div className="flex items-center justify-between gap-3">
@@ -692,24 +852,35 @@ export default function TransferPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowConfirmation(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowConfirmation(false)}
+              disabled={isSubmitting || isProcessingTransfer}
+            >
               Cancel
             </Button>
-            <Button onClick={confirmTransfer} disabled={isSubmitting}>
-              Confirm
+            <Button onClick={confirmTransfer} disabled={isSubmitting || isProcessingTransfer}>
+              {isSubmitting || isProcessingTransfer ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                'Confirm'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isProcessingExternal}>
+      <Dialog open={isProcessingTransfer}>
         <DialogContent className="border-border sm:max-w-md" showCloseButton={false}>
           <div className="flex flex-col items-center gap-4 py-6 text-center">
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
             <div>
               <p className="text-lg font-semibold">Processing your transfer</p>
               <p className="text-sm text-muted-foreground">
-                Please wait while we submit your transfer for processing...
+                Please wait while we complete your transfer...
               </p>
             </div>
           </div>

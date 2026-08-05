@@ -29,7 +29,7 @@ import { formatCurrency, formatDate } from '@/lib/utils'
 const defaultDates = getDefaultExportDateRange()
 
 export default function TransactionsPage() {
-  const { accounts, token } = useCustomerAuth()
+  const { accounts, token, refreshSession } = useCustomerAuth()
   const [searchTerm, setSearchTerm] = useState('')
   const [filterType, setFilterType] = useState<string>('all')
   const [filterAccount, setFilterAccount] = useState<string>('all')
@@ -44,6 +44,7 @@ export default function TransactionsPage() {
 
     setIsLoading(true)
     try {
+      await refreshSession()
       const result = await fetchTransactions(token, {
         page: 1,
         limit: 100,
@@ -62,7 +63,7 @@ export default function TransactionsPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [filterAccount, filterFrom, filterTo, filterType, searchTerm, token])
+  }, [filterAccount, filterFrom, filterTo, filterType, refreshSession, searchTerm, token])
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {

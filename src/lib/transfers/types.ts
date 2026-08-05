@@ -14,6 +14,21 @@ export type ExternalTransferPayload = {
   description?: string
 }
 
+export type SameBankTransferPayload = {
+  fromAccountId: string
+  toAccountNumber: string
+  amount: number
+  description?: string
+}
+
+export type ResolvedBrcbAccount = {
+  accountNumberMasked: string
+  displayName: string
+  accountHolderName: string
+  currency: string
+  accountType: string
+}
+
 export type TransferResult = {
   reference: string
   amount: number
@@ -28,6 +43,25 @@ export type TransferResult = {
     id: string
     displayName: string
     balance: number
+  }
+  submittedAt: string
+}
+
+export type SameBankTransferResult = {
+  reference: string
+  amount: number
+  currency: string
+  description: string
+  transferKind: 'same_bank'
+  status: string
+  fromAccount: {
+    id: string
+    accountNumberMasked: string
+    balance: number
+  }
+  toAccount: {
+    accountNumberMasked: string
+    accountHolderName: string
   }
   submittedAt: string
 }

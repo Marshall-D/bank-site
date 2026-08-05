@@ -30,7 +30,7 @@ function formatAccountStatus(status: string) {
 }
 
 export default function DashboardPage() {
-  const { user, application, accounts, token } = useCustomerAuth()
+  const { user, application, accounts, token, refreshSession } = useCustomerAuth()
   const primaryAccount = accounts[0]
   const [recentTransactions, setRecentTransactions] = useState<TransactionListItem[]>([])
   const [transactionsLoading, setTransactionsLoading] = useState(true)
@@ -50,9 +50,10 @@ export default function DashboardPage() {
 
     let cancelled = false
 
-    async function loadRecentTransactions() {
+    async function loadDashboard() {
       setTransactionsLoading(true)
       try {
+        await refreshSession()
         const result = await fetchTransactions(token!, { page: 1, limit: 5, sort: '-createdAt' })
         if (!cancelled) setRecentTransactions(result.items)
       } catch {
@@ -62,12 +63,12 @@ export default function DashboardPage() {
       }
     }
 
-    loadRecentTransactions()
+    loadDashboard()
 
     return () => {
       cancelled = true
     }
-  }, [token])
+  }, [token, refreshSession])
 
   const handleQuickAction = (label: string) => {
     if (label === 'Request Money') {

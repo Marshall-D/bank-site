@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -19,7 +19,7 @@ function formatAccountStatus(status: string) {
 }
 
 export default function AccountsPage() {
-  const { accounts, user, application } = useCustomerAuth()
+  const { accounts, user, application, token, refreshSession } = useCustomerAuth()
   const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0)
   const primaryCurrency = accounts[0]?.currency ?? 'USD'
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null)
@@ -27,6 +27,13 @@ export default function AccountsPage() {
 
   const selectedAccount = accounts.find((account) => account.id === selectedAccountId) ?? null
   const pendingDepositAccount = accounts.find((account) => isInitialDepositPending(account))
+
+  useEffect(() => {
+    if (!token) return
+    void refreshSession().catch(() => {
+      // Keep existing account data if refresh fails.
+    })
+  }, [token, refreshSession])
 
   return (
     <div className="space-y-8">

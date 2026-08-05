@@ -135,12 +135,49 @@ export function CustomerAuthProvider({ children }: { children: React.ReactNode }
   }, [router])
 
   const refreshSession = useCallback(async () => {
-    const accessToken = getCustomerToken()
+    let accessToken = getCustomerToken()
     if (!accessToken) return
 
-    const me = await loadCustomerMe(accessToken)
-    applyMeState(me, setUser, setApplication, setAccounts)
+    try {
+      const me = await loadCustomerMe(accessToken)
+      applyMeState(me, setUser, setApplication, setAccounts)
+    } catch {
+      const refreshedToken = await tryRefreshCustomerSession()
+      if (!refreshedToken) return
+
+      accessToken = refreshedToken
+      setTokenState(accessToken)
+      const me = await loadCustomerMe(accessToken)
+      applyMeState(me, setUser, setApplication, setAccounts)
+    }
   }, [])
+
+  useEffect(() => {
+    if (!token) return
+
+    let lastRefreshAt = 0
+    const MIN_REFRESH_GAP_MS = 5_000
+
+    const refreshIfStale = () => {
+      if (document.visibilityState !== 'visible') return
+      const now = Date.now()
+      if (now - lastRefreshAt < MIN_REFRESH_GAP_MS) return
+      lastRefreshAt = now
+      void refreshSession().catch(() => {
+        // Keep existing session data if refresh fails.
+      })
+    }
+
+    const onFocus = () => refreshIfStale()
+
+    document.addEventListener('visibilitychange', refreshIfStale)
+    window.addEventListener('focus', onFocus)
+
+    return () => {
+      document.removeEventListener('visibilitychange', refreshIfStale)
+      window.removeEventListener('focus', onFocus)
+    }
+  }, [token, refreshSession])
 
   const value = useMemo(
     () => ({ user, application, accounts, token, isLoading, login, logout, refreshSession }),

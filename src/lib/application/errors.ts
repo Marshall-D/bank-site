@@ -20,6 +20,12 @@ export function getApplicationErrorMessage(error: unknown): string {
     if (error.code === 'RATE_LIMITED') {
       return 'Too many attempts. Please wait a few minutes and try again.'
     }
+    if (error.code === 'UPLOAD_UNAVAILABLE') {
+      return 'Document upload is temporarily unavailable. Please try again shortly.'
+    }
+    if (error.code === 'INVALID_UPLOAD_SLOT') {
+      return 'Invalid document type. Please re-select your files and try again.'
+    }
     return error.message
   }
 

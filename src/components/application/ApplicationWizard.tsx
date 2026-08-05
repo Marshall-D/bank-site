@@ -35,6 +35,7 @@ import {
   type LocalDocumentsState,
 } from '@/lib/application/localDocuments'
 import { mapFormToPayload } from '@/lib/application/mapFormToPayload'
+import { uploadApplicationDocuments } from '@/lib/application/uploadDocuments'
 import type { AddressFormState, ApplicationFormState } from '@/lib/application/types'
 import {
   addressStepSchema,
@@ -190,7 +191,8 @@ export function ApplicationWizard() {
     setFieldErrors({})
 
     try {
-      const payload = mapFormToPayload(form, localDocuments)
+      const uploadedDocuments = await uploadApplicationDocuments(localDocuments)
+      const payload = mapFormToPayload(form, uploadedDocuments)
       const response = await createApplication(payload)
       router.push(
         `/register/confirmation?ref=${encodeURIComponent(response.applicationReference)}`
@@ -276,7 +278,7 @@ export function ApplicationWizard() {
                 </Button>
               ) : (
                 <Button type="button" onClick={handleSubmit} disabled={isSubmitting}>
-                  {isSubmitting ? 'Submitting application...' : 'Submit application'}
+                  {isSubmitting ? 'Uploading documents & submitting...' : 'Submit application'}
                 </Button>
               )}
             </div>

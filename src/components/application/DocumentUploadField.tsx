@@ -70,7 +70,7 @@ export function DocumentUploadField({
         >
           <Upload className="h-6 w-6 text-muted-foreground" />
           <span className="font-medium">Choose image</span>
-          <span className="text-muted-foreground">JPG or PNG, max {MAX_DOCUMENT_SIZE_LABEL}</span>
+          <span className="text-muted-foreground">Any image format, max {MAX_DOCUMENT_SIZE_LABEL}</span>
         </button>
       ) : (
         <div className="overflow-hidden rounded-lg border border-border">

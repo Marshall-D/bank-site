@@ -49,7 +49,10 @@ export function ApplicationDocumentCard({
       ) : document.availability === 'placeholder' ? (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <FileWarning className="h-4 w-4 shrink-0" />
-          <span>Document metadata saved. File upload infrastructure not connected yet.</span>
+          <span>
+            This application was submitted before document upload was connected. Ask the
+            applicant to re-apply, or request documents by email.
+          </span>
         </div>
       ) : (
         <p className="text-sm text-muted-foreground">Document URL is not available.</p>

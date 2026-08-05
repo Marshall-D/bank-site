@@ -1,5 +1,5 @@
 import {
-  ALLOWED_DOCUMENT_MIME_TYPES,
+  isAllowedDocumentMimeType,
   MAX_DOCUMENT_SIZE_BYTES,
   MAX_DOCUMENT_SIZE_LABEL,
 } from './uploadConfig'
@@ -34,12 +34,8 @@ export function formatFileSize(bytes: number): string {
 }
 
 export function validateDocumentFile(file: File): string | null {
-  if (
-    !ALLOWED_DOCUMENT_MIME_TYPES.includes(
-      file.type as (typeof ALLOWED_DOCUMENT_MIME_TYPES)[number]
-    )
-  ) {
-    return 'Only JPG and PNG images are allowed'
+  if (!isAllowedDocumentMimeType(file.type)) {
+    return 'Only image files are allowed'
   }
 
   if (file.size > MAX_DOCUMENT_SIZE_BYTES) {
@@ -87,9 +83,4 @@ export function validateLocalDocuments(state: LocalDocumentsState): Record<strin
   }
 
   return errors
-}
-
-export function sanitizeFilenameForId(filename: string): string {
-  const base = filename.replace(/\.[^.]+$/, '')
-  return base.toLowerCase().replace(/[^a-z0-9]+/g, '_').slice(0, 32) || 'document'
 }

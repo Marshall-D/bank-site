@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Loader2, Lock } from 'lucide-react'
+import { Eye, EyeOff, Loader2, Lock } from 'lucide-react'
 
 import { useCustomerAuth } from '@/components/customer/CustomerAuthProvider'
 import { Button } from '@/components/ui/button'
@@ -22,6 +22,7 @@ export function TransferPinSettingsCard() {
   const hasPin = Boolean(user?.hasTransferPin)
 
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [pin, setPin] = useState('')
   const [confirmPin, setConfirmPin] = useState('')
   const [currentPin, setCurrentPin] = useState('')
@@ -33,6 +34,7 @@ export function TransferPinSettingsCard() {
 
   const resetForms = () => {
     setPassword('')
+    setShowPassword(false)
     setPin('')
     setConfirmPin('')
     setCurrentPin('')
@@ -138,15 +140,26 @@ export function TransferPinSettingsCard() {
           <form onSubmit={handleSetPin} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="pin-password">Login password</Label>
-              <Input
-                id="pin-password"
-                type="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                disabled={isSubmitting}
-              />
+              <div className="relative">
+                <Input
+                  id="pin-password"
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={isSubmitting}
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
             <div className="space-y-2">
               <Label>New transfer PIN</Label>

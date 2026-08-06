@@ -102,8 +102,8 @@ function ActivateForm() {
                 className="font-mono text-sm"
               />
               <p className="text-xs text-muted-foreground">
-                Until email delivery is enabled, use the token from your bank&apos;s activation
-                instructions or support.
+                This is filled automatically from your activation email link. If it is empty,
+                paste the token from that email or contact support.
               </p>
             </div>
 

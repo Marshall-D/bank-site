@@ -154,6 +154,13 @@ export function ApplicationWizard() {
       return
     }
 
+    if (step === 1 && !form.emailVerificationToken.trim()) {
+      setFieldErrors({
+        emailVerificationToken: 'Please verify your email with the code we sent you.',
+      })
+      return
+    }
+
     if (step === 3) {
       const documentErrors = validateLocalDocuments(localDocuments)
       if (Object.keys(documentErrors).length > 0) {
@@ -176,6 +183,11 @@ export function ApplicationWizard() {
     const result = reviewStepSchema.safeParse(form)
     if (!result.success) {
       setFieldErrors(formatZodErrors(result.error))
+      return
+    }
+
+    if (!form.emailVerificationToken.trim()) {
+      setSubmitError('Your email verification expired. Go back to Identity and verify again.')
       return
     }
 

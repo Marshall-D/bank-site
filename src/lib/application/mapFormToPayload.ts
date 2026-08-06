@@ -101,5 +101,9 @@ export function mapFormToPayload(
     payload.pepDeclaration = true
   }
 
+  if (form.emailVerificationToken.trim()) {
+    payload.emailVerificationToken = form.emailVerificationToken.trim()
+  }
+
   return payload
 }

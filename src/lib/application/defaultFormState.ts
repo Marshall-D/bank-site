@@ -47,4 +47,5 @@ export const defaultApplicationFormState: ApplicationFormState = {
   amlAccepted: false,
   dataProcessingAccepted: false,
   marketingConsent: false,
+  emailVerificationToken: '',
 }

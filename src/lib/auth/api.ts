@@ -7,9 +7,13 @@ import type {
   AuthResponse,
   CustomerMeResponse,
   LoginPayload,
+  LoginResult,
   RefreshPayload,
   RefreshResponse,
+  ResendLoginOtpPayload,
+  ResendLoginOtpResponse,
   RevokeResponse,
+  VerifyLoginOtpPayload,
 } from './types'
 
 async function parseJson<T>(
@@ -34,14 +38,48 @@ export async function activateAccount(payload: ActivatePayload): Promise<AuthRes
   return data.data
 }
 
-export async function loginCustomer(payload: LoginPayload): Promise<AuthResponse> {
+export async function loginCustomer(payload: LoginPayload): Promise<LoginResult> {
   const response = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   })
 
+  const data = await parseJson<LoginResult>(response)
+
+  if (!response.ok || !data.success) {
+    throw new CustomerAuthError(data as ApiErrorResponse)
+  }
+
+  return data.data
+}
+
+export async function verifyLoginOtp(payload: VerifyLoginOtpPayload): Promise<AuthResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/auth/login/verify-otp`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+
   const data = await parseJson<AuthResponse>(response)
+
+  if (!response.ok || !data.success) {
+    throw new CustomerAuthError(data as ApiErrorResponse)
+  }
+
+  return data.data
+}
+
+export async function resendLoginOtp(
+  payload: ResendLoginOtpPayload
+): Promise<ResendLoginOtpResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/auth/login/resend-otp`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+
+  const data = await parseJson<ResendLoginOtpResponse>(response)
 
   if (!response.ok || !data.success) {
     throw new CustomerAuthError(data as ApiErrorResponse)

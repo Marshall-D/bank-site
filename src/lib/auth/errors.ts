@@ -27,8 +27,17 @@ export function getCustomerAuthErrorMessage(error: unknown): string {
     if (error.code === 'RATE_LIMITED') {
       return 'Too many attempts. Please wait a few minutes and try again.'
     }
-    if (error.code === 'VALIDATION_ERROR') {
+    if (error.code === 'INVALID_OR_EXPIRED_OTP' || error.code === 'OTP_MAX_ATTEMPTS') {
       return error.message
+    }
+    if (error.code === 'LOGIN_CHALLENGE_EXPIRED') {
+      return 'Your sign-in code expired. Please sign in again.'
+    }
+    if (error.code === 'OTP_RESEND_COOLDOWN' || error.code === 'OTP_SEND_FAILED') {
+      return error.message
+    }
+    if (error.code === 'RESEND_API_KEY_REQUIRED') {
+      return 'Email verification is temporarily unavailable. Please try again later.'
     }
     return error.message
   }

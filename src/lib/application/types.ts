@@ -60,6 +60,7 @@ export type ApplicationFormState = {
   amlAccepted: boolean
   dataProcessingAccepted: boolean
   marketingConsent: boolean
+  emailVerificationToken: string
 }
 
 export type CreateApplicationPayload = {
@@ -128,6 +129,17 @@ export type CreateApplicationPayload = {
     dataProcessingAccepted: boolean
     marketingConsent?: boolean
   }
+  emailVerificationToken?: string
+}
+
+export type RequestApplicationEmailOtpResponse = {
+  ok: true
+  expiresAt: string
+  resendAvailableAt: string
+}
+
+export type VerifyApplicationEmailOtpResponse = {
+  emailVerificationToken: string
 }
 
 export type CreateApplicationResponse = {

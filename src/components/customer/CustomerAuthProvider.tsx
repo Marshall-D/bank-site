@@ -26,6 +26,7 @@ type CustomerAuthContextValue = {
   token: string | null
   isLoading: boolean
   login: (email: string, password: string) => Promise<void>
+  establishSession: (auth: { token: string; refreshToken: string }) => Promise<void>
   logout: () => Promise<void>
   refreshSession: () => Promise<string | null>
 }
@@ -102,15 +103,33 @@ export function CustomerAuthProvider({ children }: { children: React.ReactNode }
     }
   }, [])
 
-  const login = useCallback(async (email: string, password: string) => {
-    const result = await loginCustomer({ email, password })
-    setCustomerTokens(result.token, result.refreshToken)
-    setTokenState(result.token)
-
-    const me = await loadCustomerMe(result.token)
+  const establishSession = useCallback(async (auth: { token: string; refreshToken: string }) => {
+    setCustomerTokens(auth.token, auth.refreshToken)
+    setTokenState(auth.token)
+    const me = await loadCustomerMe(auth.token)
     applyMeState(me, setUser, setApplication, setAccounts)
   }, [])
 
+  const login = useCallback(
+    async (email: string, password: string) => {
+      const result = await loginCustomer({ email, password })
+      if ('requires2fa' in result && result.requires2fa === true) {
+        const error = new Error('TWO_FACTOR_REQUIRED') as Error & {
+          challenge: Extract<typeof result, { requires2fa: true }>
+        }
+        error.name = 'TwoFactorRequired'
+        error.challenge = result
+        throw error
+      }
+
+      const session = result as { token: string; refreshToken: string }
+      await establishSession({
+        token: session.token,
+        refreshToken: session.refreshToken,
+      })
+    },
+    [establishSession]
+  )
   const logout = useCallback(async () => {
     const refreshToken = getCustomerRefreshToken()
 
@@ -182,8 +201,18 @@ export function CustomerAuthProvider({ children }: { children: React.ReactNode }
   }, [token, refreshSession])
 
   const value = useMemo(
-    () => ({ user, application, accounts, token, isLoading, login, logout, refreshSession }),
-    [user, application, accounts, token, isLoading, login, logout, refreshSession]
+    () => ({
+      user,
+      application,
+      accounts,
+      token,
+      isLoading,
+      login,
+      establishSession,
+      logout,
+      refreshSession,
+    }),
+    [user, application, accounts, token, isLoading, login, establishSession, logout, refreshSession]
   )
 
   return (

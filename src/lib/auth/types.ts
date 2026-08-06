@@ -71,10 +71,37 @@ export type AuthResponse = {
   user: CustomerUser
 }
 
+export type Login2faChallenge = {
+  requires2fa: true
+  loginChallengeId: string
+  expiresAt: string
+  resendAvailableAt?: string
+}
+
+export type LoginResult = AuthResponse | Login2faChallenge
+
+export type VerifyLoginOtpPayload = {
+  loginChallengeId: string
+  code: string
+}
+
+export type ResendLoginOtpPayload = {
+  loginChallengeId: string
+}
+
+export type ResendLoginOtpResponse = {
+  ok: true
+  loginChallengeId: string
+  expiresAt: string
+  resendAvailableAt: string
+}
+
 export type ApiErrorResponse = {
   success: false
   message: string
   code: string
+  attemptsRemaining?: number
+  resendAvailableAt?: string
 }
 
 export type ApiSuccessResponse<T> = {

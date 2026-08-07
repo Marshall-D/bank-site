@@ -9,9 +9,12 @@ import {
   useState,
 } from 'react'
 import { useRouter } from 'next/navigation'
-import { fetchCustomerMe, loginCustomer, logoutCustomerSession, revokeCustomerSession } from '@/lib/auth/api'
-import { tryRefreshCustomerSession } from '@/lib/auth/session'
-import { clearCustomerTokens, getCustomerRefreshToken, getCustomerToken, setCustomerTokens } from '@/lib/auth/storage'
+import { fetchCustomerMe, loginCustomer } from '@/lib/auth/api'
+import {
+  clearCustomerTokens,
+  getCustomerToken,
+  setCustomerAccessToken,
+} from '@/lib/auth/storage'
 import type {
   CustomerAccountSummary,
   CustomerApplicationSummary,
@@ -26,8 +29,9 @@ type CustomerAuthContextValue = {
   token: string | null
   isLoading: boolean
   login: (email: string, password: string) => Promise<void>
-  establishSession: (auth: { token: string; refreshToken: string }) => Promise<void>
+  establishSession: (auth: { token: string }) => Promise<void>
   logout: () => Promise<void>
+  /** Re-fetch /me with the current access token. Does not renew expiry. */
   refreshSession: () => Promise<string | null>
 }
 
@@ -41,7 +45,7 @@ async function bootstrapCustomerSession(): Promise<{
   token: string
   me: CustomerMeResponse
 } | null> {
-  let accessToken = getCustomerToken()
+  const accessToken = getCustomerToken()
   if (!accessToken) {
     return null
   }
@@ -50,15 +54,9 @@ async function bootstrapCustomerSession(): Promise<{
     const me = await loadCustomerMe(accessToken)
     return { token: accessToken, me }
   } catch {
-    const refreshedToken = await tryRefreshCustomerSession()
-    if (!refreshedToken) {
-      clearCustomerTokens()
-      return null
-    }
-
-    accessToken = refreshedToken
-    const me = await loadCustomerMe(accessToken)
-    return { token: accessToken, me }
+    // Access JWT expired or invalid — match admin: clear and require login.
+    clearCustomerTokens()
+    return null
   }
 }
 
@@ -71,6 +69,19 @@ function applyMeState(
   setUser(me.user)
   setApplication(me.application)
   setAccounts(me.accounts)
+}
+
+function clearLocalAuthState(
+  setTokenState: (token: string | null) => void,
+  setUser: (user: CustomerUser | null) => void,
+  setApplication: (application: CustomerApplicationSummary | null) => void,
+  setAccounts: (accounts: CustomerAccountSummary[]) => void
+) {
+  clearCustomerTokens()
+  setTokenState(null)
+  setUser(null)
+  setApplication(null)
+  setAccounts([])
 }
 
 export function CustomerAuthProvider({ children }: { children: React.ReactNode }) {
@@ -103,8 +114,8 @@ export function CustomerAuthProvider({ children }: { children: React.ReactNode }
     }
   }, [])
 
-  const establishSession = useCallback(async (auth: { token: string; refreshToken: string }) => {
-    setCustomerTokens(auth.token, auth.refreshToken)
+  const establishSession = useCallback(async (auth: { token: string }) => {
+    setCustomerAccessToken(auth.token)
     setTokenState(auth.token)
     const me = await loadCustomerMe(auth.token)
     applyMeState(me, setUser, setApplication, setAccounts)
@@ -122,39 +133,18 @@ export function CustomerAuthProvider({ children }: { children: React.ReactNode }
         throw error
       }
 
-      const session = result as { token: string; refreshToken: string }
-      await establishSession({
-        token: session.token,
-        refreshToken: session.refreshToken,
-      })
+      await establishSession({ token: (result as { token: string }).token })
     },
     [establishSession]
   )
+
   const logout = useCallback(async () => {
-    const refreshToken = getCustomerRefreshToken()
-
-    if (refreshToken) {
-      try {
-        await logoutCustomerSession({ refreshToken })
-      } catch {
-        try {
-          await revokeCustomerSession({ refreshToken })
-        } catch {
-          // Best-effort server revoke.
-        }
-      }
-    }
-
-    clearCustomerTokens()
-    setTokenState(null)
-    setUser(null)
-    setApplication(null)
-    setAccounts([])
+    clearLocalAuthState(setTokenState, setUser, setApplication, setAccounts)
     router.replace('/login')
   }, [router])
 
   const refreshSession = useCallback(async () => {
-    let accessToken = getCustomerToken()
+    const accessToken = getCustomerToken()
     if (!accessToken) return null
 
     try {
@@ -162,43 +152,10 @@ export function CustomerAuthProvider({ children }: { children: React.ReactNode }
       applyMeState(me, setUser, setApplication, setAccounts)
       return accessToken
     } catch {
-      const refreshedToken = await tryRefreshCustomerSession()
-      if (!refreshedToken) return null
-
-      accessToken = refreshedToken
-      setTokenState(accessToken)
-      const me = await loadCustomerMe(accessToken)
-      applyMeState(me, setUser, setApplication, setAccounts)
-      return accessToken
+      clearLocalAuthState(setTokenState, setUser, setApplication, setAccounts)
+      return null
     }
   }, [])
-
-  useEffect(() => {
-    if (!token) return
-
-    let lastRefreshAt = 0
-    const MIN_REFRESH_GAP_MS = 5_000
-
-    const refreshIfStale = () => {
-      if (document.visibilityState !== 'visible') return
-      const now = Date.now()
-      if (now - lastRefreshAt < MIN_REFRESH_GAP_MS) return
-      lastRefreshAt = now
-      void refreshSession().catch(() => {
-        // Keep existing session data if refresh fails.
-      })
-    }
-
-    const onFocus = () => refreshIfStale()
-
-    document.addEventListener('visibilitychange', refreshIfStale)
-    window.addEventListener('focus', onFocus)
-
-    return () => {
-      document.removeEventListener('visibilitychange', refreshIfStale)
-      window.removeEventListener('focus', onFocus)
-    }
-  }, [token, refreshSession])
 
   const value = useMemo(
     () => ({

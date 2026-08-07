@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { activateAccount } from '@/lib/auth/api'
 import { getCustomerAuthErrorMessage } from '@/lib/auth/errors'
-import { setCustomerTokens } from '@/lib/auth/storage'
+import { setCustomerAccessToken } from '@/lib/auth/storage'
 import { BRAND_NAME } from '@/lib/brand'
 
 function ActivateForm() {
@@ -54,7 +54,7 @@ function ActivateForm() {
         confirmPassword: formData.confirmPassword,
       })
 
-      setCustomerTokens(result.token, result.refreshToken)
+      setCustomerAccessToken(result.token)
       router.replace('/dashboard')
     } catch (err) {
       setError(getCustomerAuthErrorMessage(err))

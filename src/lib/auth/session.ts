@@ -1,35 +1,10 @@
-import { refreshCustomerSession, revokeCustomerSession } from './api'
-import {
-  clearCustomerTokens,
-  getCustomerRefreshToken,
-  getCustomerToken,
-  setCustomerTokens,
-} from './storage'
+import { clearCustomerTokens, getCustomerToken } from './storage'
 
-export async function tryRefreshCustomerSession(): Promise<string | null> {
-  const refreshToken = getCustomerRefreshToken()
-  if (!refreshToken) {
-    return null
-  }
-
-  try {
-    const result = await refreshCustomerSession({ refreshToken })
-    setCustomerTokens(result.token, result.refreshToken)
-    return result.token
-  } catch {
-    return null
-  }
-}
-
+/**
+ * Customer sessions use access JWT only (same model as admin).
+ * Refresh-token renewal has been removed.
+ */
 export async function endCustomerSession(): Promise<void> {
-  const refreshToken = getCustomerRefreshToken()
-  if (refreshToken) {
-    try {
-      await revokeCustomerSession({ refreshToken })
-    } catch {
-      // Best-effort revoke when access token may be expired.
-    }
-  }
   clearCustomerTokens()
 }
 

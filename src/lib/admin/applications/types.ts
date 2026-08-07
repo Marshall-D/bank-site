@@ -28,11 +28,14 @@ export type ReviewedBy = {
   email?: string
 }
 
+export type ExternalTransferPolicy = 'default' | 'allow' | 'deny_ip'
+
 export type ProvisionedCustomer = {
   userId: string
   email: string
   isActive: boolean
   activatedAt: string | null
+  externalTransferPolicy?: ExternalTransferPolicy
 }
 
 export type ProvisionedAccount = {

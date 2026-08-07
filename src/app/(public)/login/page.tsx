@@ -94,7 +94,7 @@ function LoginForm() {
         loginChallengeId: challenge.loginChallengeId,
         code: otpCode,
       })
-      await establishSession(result)
+      await establishSession({ token: result.token })
       router.replace('/dashboard')
     } catch (err) {
       setError(getCustomerAuthErrorMessage(err))

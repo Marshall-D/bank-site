@@ -327,7 +327,7 @@ export default function TransferPage() {
     await new Promise((resolve) => window.setTimeout(resolve, PROCESSING_DELAY_MS))
 
     try {
-      await submitExternalTransfer(token, {
+      const result = await submitExternalTransfer(token, {
         fromAccountId: sourceAccount.id,
         beneficiaryName: selectedBeneficiary.name,
         beneficiaryBank: selectedBeneficiary.bankName,
@@ -336,6 +336,10 @@ export default function TransferPage() {
         transferPin,
         description: formData.description.trim() || undefined,
       })
+      await refreshSession()
+      setTransferPin('')
+      setSuccessReference(result.reference)
+      setStep('success')
     } catch (error) {
       setExternalError(getTransferErrorMessage(error) || OUTSIDE_JURISDICTION_MESSAGE)
       setStep('review')
@@ -389,7 +393,9 @@ export default function TransferPage() {
             <div className="my-6 space-y-4 border-y border-border py-6">
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">From</span>
-                <span className="font-medium">{sourceAccount?.displayName}</span>
+                <span className="font-medium">
+                  {user?.name || sourceAccount?.displayName}
+                </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">To</span>
@@ -829,7 +835,9 @@ export default function TransferPage() {
               <div className="space-y-4 rounded-lg bg-muted p-4">
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">From</span>
-                  <span className="font-medium">{sourceAccount?.displayName}</span>
+                  <span className="font-medium">
+                    {user?.name || sourceAccount?.displayName}
+                  </span>
                 </div>
                 <div className="flex justify-center">
                   <ArrowRight className="h-5 w-5 rotate-90 text-muted-foreground" />
@@ -901,7 +909,9 @@ export default function TransferPage() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">From: {sourceAccount?.displayName}</p>
+              <p className="text-sm text-muted-foreground">
+                From: {user?.name || sourceAccount?.displayName}
+              </p>
               <p className="text-sm text-muted-foreground">To: {destinationLabel}</p>
               <p className="text-sm font-bold">
                 Amount: {formatCurrency(parseFloat(formData.amount) || 0, sourceAccount?.currency)}

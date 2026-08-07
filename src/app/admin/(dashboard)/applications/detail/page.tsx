@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { toast } from '@/hooks/use-toast'
-import { fetchAdminApplicationById, reviewAdminApplication, confirmAdminInitialDeposit } from '@/lib/admin/applications/api'
+import { fetchAdminApplicationById, reviewAdminApplication, confirmAdminInitialDeposit, updateCustomerExternalTransferPolicy } from '@/lib/admin/applications/api'
 import {
   formatAccountType,
   formatAddress,
@@ -21,10 +21,18 @@ import {
   formatProofOfAddressType,
   formatSourceOfFundsType,
 } from '@/lib/admin/applications/formatters'
-import type { AdminApplicationDetail, ReviewAction } from '@/lib/admin/applications/types'
+import type { AdminApplicationDetail, ExternalTransferPolicy, ReviewAction } from '@/lib/admin/applications/types'
 import { getAdminAuthErrorMessage } from '@/lib/admin/errors'
 import { APPLICATION_STATUS_LABELS } from '@/lib/application/statusLabels'
 import { formatDate, formatDateLong } from '@/lib/utils'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 function DetailField({
   label,
@@ -63,6 +71,8 @@ function AdminApplicationDetailContent() {
   const [reviewAction, setReviewAction] = useState<ReviewAction | null>(null)
   const [isReviewing, setIsReviewing] = useState(false)
   const [isConfirmingDeposit, setIsConfirmingDeposit] = useState(false)
+  const [externalPolicy, setExternalPolicy] = useState<ExternalTransferPolicy>('default')
+  const [isSavingPolicy, setIsSavingPolicy] = useState(false)
 
   const applicationId = searchParams.get('id')
 
@@ -74,6 +84,7 @@ function AdminApplicationDetailContent() {
     try {
       const result = await fetchAdminApplicationById(token, applicationId)
       setItem(result)
+      setExternalPolicy(result.customer?.externalTransferPolicy || 'default')
     } catch (err) {
       const message = getAdminAuthErrorMessage(err)
       if (
@@ -152,6 +163,42 @@ function AdminApplicationDetailContent() {
       })
     } finally {
       setIsConfirmingDeposit(false)
+    }
+  }
+
+  const handleSaveExternalPolicy = async () => {
+    if (!token || !item?.customer?.userId) return
+
+    setIsSavingPolicy(true)
+    try {
+      const result = await updateCustomerExternalTransferPolicy(
+        token,
+        item.customer.userId,
+        externalPolicy
+      )
+      setItem((prev) =>
+        prev && prev.customer
+          ? {
+              ...prev,
+              customer: {
+                ...prev.customer,
+                externalTransferPolicy: result.externalTransferPolicy,
+              },
+            }
+          : prev
+      )
+      toast({
+        title: 'External transfer policy updated',
+        description: `Set to “${result.externalTransferPolicy}” for ${result.email}.`,
+      })
+    } catch (err) {
+      toast({
+        title: 'Could not update policy',
+        description: getAdminAuthErrorMessage(err),
+        variant: 'destructive',
+      })
+    } finally {
+      setIsSavingPolicy(false)
     }
   }
 
@@ -275,6 +322,40 @@ function AdminApplicationDetailContent() {
                   label="Customer active"
                   value={item.customer.isActive ? 'Yes' : 'No'}
                 />
+                <div className="sm:col-span-2 space-y-2 rounded-lg border border-border p-4">
+                  <Label htmlFor="external-transfer-policy">External transfers</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Controls whether this customer can complete external transfers. Changes apply
+                    immediately (no redeploy).
+                  </p>
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <Select
+                      value={externalPolicy}
+                      onValueChange={(value) =>
+                        setExternalPolicy(value as ExternalTransferPolicy)
+                      }
+                    >
+                      <SelectTrigger id="external-transfer-policy" className="sm:max-w-sm">
+                        <SelectValue placeholder="Select policy" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="default">Default (jurisdiction block)</SelectItem>
+                        <SelectItem value="allow">Allow external transfers</SelectItem>
+                        <SelectItem value="deny_ip">Block (IP unauthorized)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      type="button"
+                      onClick={handleSaveExternalPolicy}
+                      disabled={
+                        isSavingPolicy ||
+                        externalPolicy === (item.customer.externalTransferPolicy || 'default')
+                      }
+                    >
+                      {isSavingPolicy ? 'Saving...' : 'Save policy'}
+                    </Button>
+                  </div>
+                </div>
               </>
             )}
             {item.activation && (

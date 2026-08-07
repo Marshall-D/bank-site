@@ -6,14 +6,20 @@ export function getCustomerToken(): string | null {
   return window.localStorage.getItem(CUSTOMER_TOKEN_KEY)
 }
 
+/** @deprecated Refresh tokens are no longer used (access JWT only, like admin). */
 export function getCustomerRefreshToken(): string | null {
   if (typeof window === 'undefined') return null
   return window.localStorage.getItem(CUSTOMER_REFRESH_TOKEN_KEY)
 }
 
-export function setCustomerTokens(token: string, refreshToken: string): void {
+export function setCustomerAccessToken(token: string): void {
   window.localStorage.setItem(CUSTOMER_TOKEN_KEY, token)
-  window.localStorage.setItem(CUSTOMER_REFRESH_TOKEN_KEY, refreshToken)
+  window.localStorage.removeItem(CUSTOMER_REFRESH_TOKEN_KEY)
+}
+
+/** @deprecated Use setCustomerAccessToken — refresh tokens are no longer issued. */
+export function setCustomerTokens(token: string, _refreshToken?: string): void {
+  setCustomerAccessToken(token)
 }
 
 export function clearCustomerTokens(): void {

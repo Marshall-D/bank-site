@@ -58,6 +58,14 @@ export function getTransferErrorMessage(error: unknown): string {
       return 'Set a transfer PIN in Settings before you can make transfers.'
     }
 
+    if (error.code === 'EXTERNAL_TRANSFER_IP_BLOCKED') {
+      return error.message
+    }
+
+    if (error.code === 'OUTSIDE_JURISDICTION') {
+      return error.message
+    }
+
     return error.message
   }
 

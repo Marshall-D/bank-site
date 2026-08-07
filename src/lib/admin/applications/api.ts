@@ -140,3 +140,39 @@ export async function confirmAdminInitialDeposit(
 
   return data.data
 }
+
+export async function updateCustomerExternalTransferPolicy(
+  token: string,
+  userId: string,
+  policy: 'default' | 'allow' | 'deny_ip'
+): Promise<{
+  id: string
+  email: string
+  externalTransferPolicy: 'default' | 'allow' | 'deny_ip'
+}> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/v1/admin/customers/${userId}/external-transfer-policy`,
+    {
+      method: 'PATCH',
+      headers: {
+        ...authHeaders(token),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ policy }),
+    }
+  )
+
+  const data = (await response.json()) as
+    | ApiSuccessResponse<{
+        id: string
+        email: string
+        externalTransferPolicy: 'default' | 'allow' | 'deny_ip'
+      }>
+    | ApiErrorResponse
+
+  if (!response.ok || !data.success) {
+    throw new AdminAuthError(data as ApiErrorResponse)
+  }
+
+  return data.data
+}

@@ -5,6 +5,7 @@ import type {
   ApiErrorResponse,
   ApiSuccessResponse,
   ExternalTransferPayload,
+  ExternalTransferResult,
   InternalTransferPayload,
   ResolvedBrcbAccount,
   SameBankTransferPayload,
@@ -85,14 +86,20 @@ export async function submitSameBankTransfer(
 export async function submitExternalTransfer(
   token: string,
   payload: ExternalTransferPayload
-): Promise<never> {
+): Promise<ExternalTransferResult> {
   const response = await fetch(`${API_BASE_URL}/api/v1/transfers/external`, {
     method: 'POST',
     headers: authHeaders(token),
     body: JSON.stringify(payload),
   })
 
-  const data = (await response.json()) as ApiErrorResponse
+  const data = (await response.json()) as
+    | ApiSuccessResponse<ExternalTransferResult>
+    | ApiErrorResponse
 
-  throw new TransferApiError(data)
+  if (!response.ok || !data.success) {
+    throw new TransferApiError(data as ApiErrorResponse)
+  }
+
+  return data.data
 }

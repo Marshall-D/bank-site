@@ -69,6 +69,25 @@ export type SameBankTransferResult = {
   submittedAt: string
 }
 
+export type ExternalTransferResult = {
+  reference: string
+  amount: number
+  currency: string
+  status: string
+  fromAccount: {
+    id: string
+    displayName: string
+    accountNumberMasked: string
+    balance: number
+  }
+  toBeneficiary: {
+    name: string
+    bank: string
+    accountNumber: string
+  }
+  submittedAt: string
+}
+
 export type ApiFieldError = {
   field: string
   message: string

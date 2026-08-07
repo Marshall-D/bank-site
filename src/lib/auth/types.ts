@@ -58,7 +58,7 @@ export type RefreshPayload = {
 
 export type RefreshResponse = {
   token: string
-  refreshToken: string
+  refreshToken?: string
 }
 
 export type RevokeResponse = {
@@ -67,7 +67,8 @@ export type RevokeResponse = {
 
 export type AuthResponse = {
   token: string
-  refreshToken: string
+  /** @deprecated No longer issued; access JWT only (like admin). */
+  refreshToken?: string
   user: CustomerUser
 }
 

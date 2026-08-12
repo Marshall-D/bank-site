@@ -5,6 +5,10 @@ export const BENEFICIARY_FIELD_LIMITS = {
   bankNameMax: 100,
   accountNumberMin: 4,
   accountNumberMax: 34,
+  routingNumberMin: 8,
+  routingNumberMax: 11,
+  swiftOrIbanMin: 8,
+  swiftOrIbanMax: 34,
 } as const
 
 export const UNSAFE_TEXT_PATTERN = /<[^>]*>|javascript:|data:text\/html|on\w+\s*=/i
@@ -18,3 +22,9 @@ export const BENEFICIARY_BANK_NAME_PATTERN =
 
 /** Account number: digits only */
 export const BENEFICIARY_ACCOUNT_NUMBER_PATTERN = /^\d+$/
+
+/** Routing number: digits only */
+export const BENEFICIARY_ROUTING_NUMBER_PATTERN = /^\d+$/
+
+/** SWIFT BIC or IBAN: letters and digits only */
+export const BENEFICIARY_SWIFT_OR_IBAN_PATTERN = /^[A-Za-z0-9]+$/

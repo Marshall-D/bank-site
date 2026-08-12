@@ -43,6 +43,10 @@ export async function createBeneficiary(
       name: payload.name.trim(),
       bankName: payload.bankName.trim(),
       accountNumber: payload.accountNumber.trim(),
+      routingNumber: payload.routingNumber.trim(),
+      ...(payload.swiftOrIban?.trim()
+        ? { swiftOrIban: payload.swiftOrIban.trim().toUpperCase() }
+        : {}),
     }),
   })
 

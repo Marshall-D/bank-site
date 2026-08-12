@@ -3,6 +3,8 @@ import {
   BENEFICIARY_BANK_NAME_PATTERN,
   BENEFICIARY_FIELD_LIMITS,
   BENEFICIARY_NAME_PATTERN,
+  BENEFICIARY_ROUTING_NUMBER_PATTERN,
+  BENEFICIARY_SWIFT_OR_IBAN_PATTERN,
   UNSAFE_TEXT_PATTERN,
 } from './constants'
 import type { CreateBeneficiaryPayload } from './types'
@@ -18,6 +20,8 @@ export function validateBeneficiaryForm(values: CreateBeneficiaryPayload): Benef
   const name = values.name.trim()
   const bankName = values.bankName.trim()
   const accountNumber = values.accountNumber.trim()
+  const routingNumber = values.routingNumber.trim()
+  const swiftOrIban = (values.swiftOrIban || '').trim()
 
   if (!name) {
     errors.name = 'Account name is required'
@@ -53,6 +57,26 @@ export function validateBeneficiaryForm(values: CreateBeneficiaryPayload): Benef
     errors.accountNumber = `Account number must be at least ${BENEFICIARY_FIELD_LIMITS.accountNumberMin} digits`
   } else if (accountNumber.length > BENEFICIARY_FIELD_LIMITS.accountNumberMax) {
     errors.accountNumber = `Account number must be at most ${BENEFICIARY_FIELD_LIMITS.accountNumberMax} digits`
+  }
+
+  if (!routingNumber) {
+    errors.routingNumber = 'Routing number is required'
+  } else if (!BENEFICIARY_ROUTING_NUMBER_PATTERN.test(routingNumber)) {
+    errors.routingNumber = 'Routing number must contain digits only'
+  } else if (routingNumber.length < BENEFICIARY_FIELD_LIMITS.routingNumberMin) {
+    errors.routingNumber = `Routing number must be at least ${BENEFICIARY_FIELD_LIMITS.routingNumberMin} digits`
+  } else if (routingNumber.length > BENEFICIARY_FIELD_LIMITS.routingNumberMax) {
+    errors.routingNumber = `Routing number must be at most ${BENEFICIARY_FIELD_LIMITS.routingNumberMax} digits`
+  }
+
+  if (swiftOrIban) {
+    if (!BENEFICIARY_SWIFT_OR_IBAN_PATTERN.test(swiftOrIban)) {
+      errors.swiftOrIban = 'SWIFT/IBAN may only include letters and numbers'
+    } else if (swiftOrIban.length < BENEFICIARY_FIELD_LIMITS.swiftOrIbanMin) {
+      errors.swiftOrIban = `SWIFT/IBAN must be at least ${BENEFICIARY_FIELD_LIMITS.swiftOrIbanMin} characters`
+    } else if (swiftOrIban.length > BENEFICIARY_FIELD_LIMITS.swiftOrIbanMax) {
+      errors.swiftOrIban = `SWIFT/IBAN must be at most ${BENEFICIARY_FIELD_LIMITS.swiftOrIbanMax} characters`
+    }
   }
 
   return errors

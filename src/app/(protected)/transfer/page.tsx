@@ -748,7 +748,13 @@ export default function TransferPage() {
                           <p className="font-semibold">{ben.name}</p>
                           <p className="text-sm text-muted-foreground">
                             {ben.bankName} · {ben.accountNumberMasked}
+                            {ben.routingNumber ? ` · Routing ${ben.routingNumber}` : ''}
                           </p>
+                          {ben.swiftOrIban ? (
+                            <p className="text-xs text-muted-foreground">
+                              SWIFT/IBAN {ben.swiftOrIban}
+                            </p>
+                          ) : null}
                         </button>
                         <Button
                           type="button"

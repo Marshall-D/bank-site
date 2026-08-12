@@ -4,6 +4,8 @@ export type Beneficiary = {
   bankName: string
   accountNumber: string
   accountNumberMasked: string
+  routingNumber: string | null
+  swiftOrIban: string | null
   createdAt: string
 }
 
@@ -11,6 +13,8 @@ export type CreateBeneficiaryPayload = {
   name: string
   bankName: string
   accountNumber: string
+  routingNumber: string
+  swiftOrIban?: string
 }
 
 export type ApiErrorResponse = {

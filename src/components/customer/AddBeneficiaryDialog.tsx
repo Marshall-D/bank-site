@@ -23,6 +23,8 @@ const emptyForm = {
   name: '',
   bankName: '',
   accountNumber: '',
+  routingNumber: '',
+  swiftOrIban: '',
 }
 
 type AddBeneficiaryDialogProps = {
@@ -67,7 +69,13 @@ export function AddBeneficiaryDialog({
     setSubmitError(null)
 
     try {
-      const beneficiary = await createBeneficiary(token, form)
+      const beneficiary = await createBeneficiary(token, {
+        name: form.name,
+        bankName: form.bankName,
+        accountNumber: form.accountNumber,
+        routingNumber: form.routingNumber,
+        ...(form.swiftOrIban.trim() ? { swiftOrIban: form.swiftOrIban } : {}),
+      })
       onCreated(beneficiary)
       setForm(emptyForm)
       onOpenChange(false)
@@ -146,6 +154,49 @@ export function AddBeneficiaryDialog({
             />
             {fieldErrors.accountNumber && (
               <p className="text-sm text-destructive">{fieldErrors.accountNumber}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="beneficiary-routing">Routing number</Label>
+            <Input
+              id="beneficiary-routing"
+              value={form.routingNumber}
+              onChange={(e) =>
+                updateField('routingNumber', e.target.value.replace(/\D/g, ''))
+              }
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={BENEFICIARY_FIELD_LIMITS.routingNumberMax}
+              placeholder="8–11 digits"
+              disabled={isSubmitting}
+              required
+            />
+            {fieldErrors.routingNumber && (
+              <p className="text-sm text-destructive">{fieldErrors.routingNumber}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="beneficiary-swift">
+              SWIFT / IBAN <span className="font-normal text-muted-foreground">(optional)</span>
+            </Label>
+            <Input
+              id="beneficiary-swift"
+              value={form.swiftOrIban}
+              onChange={(e) =>
+                updateField(
+                  'swiftOrIban',
+                  e.target.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase()
+                )
+              }
+              maxLength={BENEFICIARY_FIELD_LIMITS.swiftOrIbanMax}
+              placeholder="Optional"
+              disabled={isSubmitting}
+              autoCapitalize="characters"
+            />
+            {fieldErrors.swiftOrIban && (
+              <p className="text-sm text-destructive">{fieldErrors.swiftOrIban}</p>
             )}
           </div>
 

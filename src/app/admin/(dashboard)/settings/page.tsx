@@ -209,6 +209,9 @@ export default function AdminSettingsPage() {
             <Button variant="outline" className="w-full" asChild>
               <Link href="/admin/applications">Go to applications queue</Link>
             </Button>
+            <Button variant="outline" className="w-full" asChild>
+              <Link href="/admin/transfer-messages">Edit transfer block messages</Link>
+            </Button>
           </CardContent>
         </Card>
       </div>

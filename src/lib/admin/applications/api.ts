@@ -144,11 +144,11 @@ export async function confirmAdminInitialDeposit(
 export async function updateCustomerExternalTransferPolicy(
   token: string,
   userId: string,
-  policy: 'default' | 'allow' | 'deny_ip'
+  policy: 'default' | 'allow' | 'deny_ip' | 'deny_suspicious'
 ): Promise<{
   id: string
   email: string
-  externalTransferPolicy: 'default' | 'allow' | 'deny_ip'
+  externalTransferPolicy: 'default' | 'allow' | 'deny_ip' | 'deny_suspicious'
 }> {
   const response = await fetch(
     `${API_BASE_URL}/api/v1/admin/customers/${userId}/external-transfer-policy`,
@@ -166,7 +166,7 @@ export async function updateCustomerExternalTransferPolicy(
     | ApiSuccessResponse<{
         id: string
         email: string
-        externalTransferPolicy: 'default' | 'allow' | 'deny_ip'
+        externalTransferPolicy: 'default' | 'allow' | 'deny_ip' | 'deny_suspicious'
       }>
     | ApiErrorResponse
 

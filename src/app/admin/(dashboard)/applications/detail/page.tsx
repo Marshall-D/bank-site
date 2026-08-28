@@ -342,6 +342,9 @@ function AdminApplicationDetailContent() {
                         <SelectItem value="default">Default (jurisdiction block)</SelectItem>
                         <SelectItem value="allow">Allow external transfers</SelectItem>
                         <SelectItem value="deny_ip">Block (IP unauthorized)</SelectItem>
+                        <SelectItem value="deny_suspicious">
+                          Block (suspicious activity)
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                     <Button

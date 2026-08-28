@@ -28,7 +28,7 @@ export type ReviewedBy = {
   email?: string
 }
 
-export type ExternalTransferPolicy = 'default' | 'allow' | 'deny_ip'
+export type ExternalTransferPolicy = 'default' | 'allow' | 'deny_ip' | 'deny_suspicious'
 
 export type ProvisionedCustomer = {
   userId: string

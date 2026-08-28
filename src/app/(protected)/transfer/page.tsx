@@ -35,7 +35,6 @@ import {
 } from '@/lib/transfers/api'
 import {
   BRCB_ACCOUNT_NUMBER_LENGTH,
-  OUTSIDE_JURISDICTION_MESSAGE,
   TRANSFER_LIMITS,
 } from '@/lib/transfers/constants'
 import { getTransferErrorMessage } from '@/lib/transfers/errors'
@@ -341,7 +340,7 @@ export default function TransferPage() {
       setSuccessReference(result.reference)
       setStep('success')
     } catch (error) {
-      setExternalError(getTransferErrorMessage(error) || OUTSIDE_JURISDICTION_MESSAGE)
+      setExternalError(getTransferErrorMessage(error))
       setStep('review')
     } finally {
       setIsProcessingTransfer(false)
